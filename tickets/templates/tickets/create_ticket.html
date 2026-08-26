@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="it" class="h-full bg-slate-50">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Afterbit - Nuovo Ticket</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-full flex flex-col">
+
+    <header class="bg-white border-b border-slate-200">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between h-16 items-center">
+            <span class="text-xl font-black text-slate-900">AFTERBIT<span class="text-blue-600">.</span></span>
+            <a href="{% url 'dashboard' %}" class="text-sm font-medium text-slate-600 hover:text-slate-900">← Torna alla Dashboard</a>
+        </div>
+    </header>
+
+    <main class="flex-1 max-w-4xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="bg-white border border-slate-200 rounded-xl p-6 sm:p-8 shadow-sm">
+            <h1 class="text-2xl font-bold text-slate-900">Apri un nuovo ticket</h1>
+            <p class="text-sm text-slate-500 mt-1 mb-6">Compila i campi sottostanti per richiedere supporto tecnico.</p>
+
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="mb-6 p-4 rounded-lg text-sm border
+                        {% if message.tags == 'error' %} bg-red-50 text-red-700 border-red-200
+                        {% else %} bg-emerald-50 text-emerald-800 border-emerald-200 {% endif %}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <form method="POST" action="{% url 'create_ticket' %}" enctype="multipart/form-data" class="space-y-6">
+                {% csrf_token %}
+
+                <div>
+                    <label for="{{ form.tipo_intervento.id_for_label }}" class="block text-sm font-medium text-slate-700 mb-1">Tipo di intervento richiesto</label>
+                    {{ form.tipo_intervento }}
+                    {% if form.tipo_intervento.errors %}
+                        <p class="text-xs text-red-600 mt-1" id="{{ form.tipo_intervento.id_for_label }}-error">{{ form.tipo_intervento.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <div>
+                    <label for="{{ form.title.id_for_label }}" class="block text-sm font-medium text-slate-700 mb-1">Titolo / Oggetto</label>
+                    {{ form.title }}
+                    {% if form.title.errors %}
+                        <p class="text-xs text-red-600 mt-1" id="{{ form.title.id_for_label }}-error">{{ form.title.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <div>
+                    <label for="{{ form.priority.id_for_label }}" class="block text-sm font-medium text-slate-700 mb-1">Priorità</label>
+                    {{ form.priority }}
+                    {% if form.priority.errors %}
+                        <p class="text-xs text-red-600 mt-1" id="{{ form.priority.id_for_label }}-error">{{ form.priority.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <div>
+                    <label for="{{ form.description.id_for_label }}" class="block text-sm font-medium text-slate-700 mb-1">Descrizione del problema</label>
+                    {{ form.description }}
+                    {% if form.description.errors %}
+                        <p class="text-xs text-red-600 mt-1" id="{{ form.description.id_for_label }}-error">{{ form.description.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <div>
+                    <label for="{{ form.attachment.id_for_label }}" class="block text-sm font-medium text-slate-700 mb-1">Allegato (opzionale, max 10MB)</label>
+                    {{ form.attachment }}
+                    {% if form.attachment.errors %}
+                        <p class="text-xs text-red-600 mt-1" id="{{ form.attachment.id_for_label }}-error">{{ form.attachment.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <div class="flex justify-end space-x-3 pt-4 border-t border-slate-100">
+                    <a href="{% url 'dashboard' %}" class="px-4 py-2 rounded-lg border border-slate-300 text-sm font-medium text-slate-700 hover:bg-slate-50">
+                        Annulla
+                    </a>
+                    <button type="submit" class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-sm font-semibold text-white shadow">
+                        Invia Ticket
+                    </button>
+                </div>
+            </form>
+        </div>
+    </main>
+
+</body>
+</html>

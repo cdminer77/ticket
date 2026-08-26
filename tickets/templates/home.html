@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Afterbit Srl - Portale Assistenza Clienti</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 min-h-screen flex flex-col items-center justify-center p-6">
+    <div class="max-w-4xl w-full text-center space-y-8">
+        <div>
+            <h1 class="text-3xl font-bold text-slate-900 tracking-tight">Afterbit Srl</h1>
+            <p class="text-slate-600 mt-2">Centro Supporto Tecnico e Gestione Ticket</p>
+        </div>
+
+        <div class="grid md:grid-cols-2 gap-6 text-left">
+            <!-- Card 1: Cliente gia' registrato -->
+            <div class="bg-white border border-slate-200 rounded-xl p-8 shadow-sm hover:shadow-md transition">
+                <div class="w-12 h-12 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center mb-4 font-bold text-xl">👤</div>
+                <h2 class="text-xl font-semibold text-slate-800">Sei già cliente?</h2>
+                <p class="text-slate-500 text-sm mt-2 mb-6">Accedi al tuo account per aprire un nuovo ticket o controllare quelli esistenti.</p>
+                <a href="{% url 'login' %}" class="inline-block w-full text-center bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-4 rounded-lg transition">Accedi</a>
+            </div>
+
+            <!-- Card 2: Nuovo cliente -->
+            <div class="bg-white border border-slate-200 rounded-xl p-8 shadow-sm hover:shadow-md transition">
+                <div class="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-lg flex items-center justify-center mb-4 font-bold text-xl">+</div>
+                <h2 class="text-xl font-semibold text-slate-800">Nuovo cliente</h2>
+                <p class="text-slate-500 text-sm mt-2 mb-6">Crea un account gratuito per iniziare a richiedere assistenza tecnica.</p>
+                <a href="{% url 'register' %}" class="inline-block w-full text-center bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2.5 px-4 rounded-lg transition">Registrati</a>
+            </div>
+        </div>
+
+        <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm text-left max-w-md mx-auto">
+            <h2 class="text-sm font-semibold text-slate-800 flex items-center gap-2">
+                <span aria-hidden="true">🔍</span> Controlla lo stato di un ticket
+            </h2>
+            <form action="{% url 'ticket_search' %}" method="GET" class="space-y-3">
+                <label for="ticket_code" class="text-slate-500 text-xs mt-1 mb-1 block">Non serve un account: inserisci il codice del ticket.</label>
+                <input id="ticket_code" type="text" name="code" placeholder="Inserisci Codice Ticket (es. #12)..." class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <button type="submit" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-medium py-2.5 px-4 rounded-lg transition">Cerca</button>
+            </form>
+        </div>
+        
+        <footer class="text-center text-xs text-slate-400 mt-8">
+            <a href="{% url 'privacy_policy' %}" target="_blank" class="hover:text-slate-600 transition underline">Privacy Policy</a>
+            <span class="mx-2">&bull;</span>
+            <span>&copy; 2026 Afterbit S.r.l.</span>
+        </footer>
+    </div>
+</body>
+</html>

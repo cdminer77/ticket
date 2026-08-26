@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="it" class="h-full bg-slate-50">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Afterbit SRL - Login Assistenza</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="h-full flex items-center justify-center p-4">
+
+    <div class="flex flex-col lg:flex-row shadow-2xl overflow-hidden rounded-2xl max-w-4xl w-full bg-white border border-slate-200">
+        
+        <div class="flex-1 py-12 px-6 sm:px-12">
+            <div>
+                <span class="text-2xl font-black tracking-tight text-slate-900">AFTERBIT<span class="text-blue-600">.</span></span>
+                <h2 class="mt-6 text-2xl font-bold tracking-tight text-slate-900">Accedi all'Helpdesk</h2>
+                <p class="mt-1 text-sm text-slate-600">Gestione e tracciamento ticket di assistenza.</p>
+            </div>
+
+            <div class="mt-8">
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="mb-4 p-3 rounded-lg bg-red-50 text-red-700 text-sm border border-red-200">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+
+                <form class="space-y-4" method="POST" action="{% url 'login' %}">
+                    {% csrf_token %}
+                    <div>
+                        <label for="username" class="block text-sm font-medium text-slate-700">Username o Email</label>
+                        <input id="username" name="username" type="text" value="{{ username|default:'' }}" required class="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-blue-600 focus:ring-1 focus:ring-blue-600 sm:text-sm">
+                    </div>
+
+                    <div>
+                        <label for="password" class="block text-sm font-medium text-slate-700">Password</label>
+                        <input id="password" name="password" type="password" required class="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-blue-600 focus:ring-1 focus:ring-blue-600 sm:text-sm">
+                    </div>
+
+                    <div class="flex items-center justify-between text-sm">
+                        <label for="remember_me" class="flex items-center text-slate-600 cursor-pointer">
+                            <input id="remember_me" name="remember_me" type="checkbox" class="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500">
+                            <span class="ml-2">Ricordami</span>
+                        </label>
+                    </div>
+
+                    <button type="submit" class="w-full rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow hover:bg-blue-500 transition">
+                        Entra nel portale
+                    </button>
+                </form>
+
+                <p class="mt-4 text-sm text-slate-500 text-center">
+                    Non hai ancora un account? <a href="{% url 'register' %}" class="text-blue-600 hover:text-blue-800 font-medium">Registrati</a>
+                </p>
+
+                <footer class="text-center text-xs text-slate-400 mt-8 border-t border-slate-100 pt-4">
+                    <a href="{% url 'privacy_policy' %}" target="_blank" class="hover:text-slate-600 transition underline">Privacy Policy</a>
+                    <span class="mx-2">&bull;</span>
+                    <span>&copy; 2026 Afterbit S.r.l.</span>
+                </footer>
+            </div>
+        </div>
+
+        <div class="hidden lg:flex flex-1 flex-col justify-between bg-slate-900 p-12 text-white">
+            <div>
+                <span class="inline-block px-3 py-1 text-xs font-semibold uppercase tracking-wider bg-blue-500/20 text-blue-300 rounded-full">
+                    Supporto Tecnico
+                </span>
+                <h3 class="mt-6 text-3xl font-bold leading-tight">Afterbit IT Solutions</h3>
+                <p class="mt-4 text-slate-400 text-sm leading-relaxed">
+                    Sistema centralizzato di supporto tecnico, tracciamento anomalie e manutenzione infrastrutture.
+                </p>
+            </div>
+            <div class="border-t border-slate-800 pt-6">
+                <p class="text-xs text-slate-500">Emergenze bloccanti:</p>
+                <p class="text-sm font-medium text-slate-300 mt-1">supporto@afterbit.com</p>
+            </div>
+        </div>
+
+    </div>
+
+</body>
+</html>
