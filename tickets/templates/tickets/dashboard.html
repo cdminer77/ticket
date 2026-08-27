@@ -42,6 +42,45 @@
             </a>
         </div>
 
+        <!-- Filtri di ricerca -->
+        <form method="GET" class="bg-white border border-slate-200 rounded-xl p-4 mb-6 shadow-sm flex flex-col md:flex-row gap-4 items-end">
+            <div class="flex-1 w-full">
+                <label for="filter_q" class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Cerca</label>
+                <input id="filter_q" type="text" name="q" value="{{ q }}" placeholder="Cerca per ID, Oggetto, Descrizione, Referente..." class="w-full border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-700">
+            </div>
+
+            <div class="w-full md:w-48">
+                <label for="filter_status" class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Stato</label>
+                <select id="filter_status" name="status" class="w-full border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-700">
+                    <option value="">Tutti</option>
+                    {% for value, name in status_choices %}
+                        <option value="{{ value }}" {% if selected_status == value %}selected{% endif %}>{{ name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="w-full md:w-48">
+                <label for="filter_tipo" class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Tipo Intervento</label>
+                <select id="filter_tipo" name="tipo_intervento" class="w-full border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-700">
+                    <option value="">Tutti</option>
+                    {% for value, name in tipo_choices %}
+                        <option value="{{ value }}" {% if selected_tipo == value %}selected{% endif %}>{{ name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="flex gap-2 w-full md:w-auto">
+                <button type="submit" class="flex-1 md:flex-none bg-blue-600 hover:bg-blue-500 text-white font-semibold px-4 py-2 rounded-lg text-sm transition">
+                    Filtra
+                </button>
+                {% if q or selected_status or selected_tipo %}
+                    <a href="{% url 'dashboard' %}" class="flex-1 md:flex-none text-center bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold px-4 py-2 rounded-lg text-sm transition">
+                        Reset
+                    </a>
+                {% endif %}
+            </div>
+        </form>
+
         <div class="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
             <table class="min-w-full divide-y divide-slate-200 text-left text-sm">
                 <thead class="bg-slate-50 text-slate-500 font-semibold">
@@ -112,11 +151,11 @@
         {% if tickets.paginator.num_pages > 1 %}
             <div class="mt-6 flex justify-center items-center gap-4 text-sm">
                 {% if tickets.has_previous %}
-                    <a href="?page={{ tickets.previous_page_number }}" class="text-blue-600 hover:text-blue-800 font-medium">← Precedente</a>
+                    <a href="?page={{ tickets.previous_page_number }}{% if q %}&q={{ q }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}{% if selected_tipo %}&tipo_intervento={{ selected_tipo }}{% endif %}" class="text-blue-600 hover:text-blue-800 font-medium">← Precedente</a>
                 {% endif %}
                 <span class="text-slate-500">Pagina {{ tickets.number }} di {{ tickets.paginator.num_pages }}</span>
                 {% if tickets.has_next %}
-                    <a href="?page={{ tickets.next_page_number }}" class="text-blue-600 hover:text-blue-800 font-medium">Successiva →</a>
+                    <a href="?page={{ tickets.next_page_number }}{% if q %}&q={{ q }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}{% if selected_tipo %}&tipo_intervento={{ selected_tipo }}{% endif %}" class="text-blue-600 hover:text-blue-800 font-medium">Successiva →</a>
                 {% endif %}
             </div>
         {% endif %}

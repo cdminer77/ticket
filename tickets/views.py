@@ -5,6 +5,7 @@ from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.utils import timezone
+from django.db.models import Q
 from .models import Ticket, TicketUpdate
 from .forms import TicketForm, TicketStatusForm, CustomerRegistrationForm
 from . import emails
@@ -103,11 +104,38 @@ def dashboard(request):
     else:
         tickets_qs = Ticket.objects.filter(created_by=request.user)
 
+    # Leggi i parametri di filtraggio
+    q = request.GET.get('q', '').strip()
+    status_filter = request.GET.get('status', '').strip()
+    tipo_filter = request.GET.get('tipo_intervento', '').strip()
+
+    # Applica i filtri
+    if q:
+        tickets_qs = tickets_qs.filter(
+            Q(id__icontains=q.replace('#', '')) |
+            Q(title__icontains=q) |
+            Q(description__icontains=q) |
+            Q(referente__icontains=q)
+        )
+
+    if status_filter:
+        tickets_qs = tickets_qs.filter(status=status_filter)
+
+    if tipo_filter:
+        tickets_qs = tickets_qs.filter(tipo_intervento=tipo_filter)
+
     paginator = Paginator(tickets_qs, TICKETS_PER_PAGE)
     page_number = request.GET.get('page')
     tickets = paginator.get_page(page_number)
 
-    return render(request, 'tickets/dashboard.html', {'tickets': tickets})
+    return render(request, 'tickets/dashboard.html', {
+        'tickets': tickets,
+        'q': q,
+        'selected_status': status_filter,
+        'selected_tipo': tipo_filter,
+        'status_choices': Ticket.STATUS_CHOICES,
+        'tipo_choices': Ticket.TIPO_INTERVENTO_CHOICES,
+    })
 
 
 @login_required

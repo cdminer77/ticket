@@ -585,3 +585,39 @@ class TicketSystemTests(TestCase):
         # Check email contains the note
         self.assertEqual(len(mail.outbox), 1)
         self.assertIn('Siamo al lavoro per risolvere l\'errore del database.', mail.outbox[0].body)
+
+    def test_dashboard_filters_by_text_search(self):
+        Ticket.objects.create(title='Stampante rotta', description='La stampante non stampa.', created_by=self.user)
+        Ticket.objects.create(title='Errore login', description='Errore ad accedere al pannello.', created_by=self.user, referente='Giovanni Rossi')
+
+        self.client.login(username='mario.rossi', password='PasswordSicura123!')
+
+        # Cerca per parola chiave 'Stampante'
+        response = self.client.get(reverse('dashboard'), {'q': 'Stampante'})
+        self.assertEqual(len(response.context['tickets']), 1)
+        self.assertEqual(response.context['tickets'][0].title, 'Stampante rotta')
+
+        # Cerca per referente 'Giovanni'
+        response = self.client.get(reverse('dashboard'), {'q': 'Giovanni'})
+        self.assertEqual(len(response.context['tickets']), 1)
+        self.assertEqual(response.context['tickets'][0].title, 'Errore login')
+
+    def test_dashboard_filters_by_status(self):
+        Ticket.objects.create(title='Ticket Aperto', status='open', created_by=self.user)
+        Ticket.objects.create(title='Ticket Risolto', status='resolved', created_by=self.user)
+
+        self.client.login(username='mario.rossi', password='PasswordSicura123!')
+
+        response = self.client.get(reverse('dashboard'), {'status': 'resolved'})
+        self.assertEqual(len(response.context['tickets']), 1)
+        self.assertEqual(response.context['tickets'][0].title, 'Ticket Risolto')
+
+    def test_dashboard_filters_by_tipo_intervento(self):
+        Ticket.objects.create(title='Ticket Amministrazione', tipo_intervento='amministrazione', created_by=self.user)
+        Ticket.objects.create(title='Ticket Assistenza', tipo_intervento='assistenza_tecnica', created_by=self.user)
+
+        self.client.login(username='mario.rossi', password='PasswordSicura123!')
+
+        response = self.client.get(reverse('dashboard'), {'tipo_intervento': 'amministrazione'})
+        self.assertEqual(len(response.context['tickets']), 1)
+        self.assertEqual(response.context['tickets'][0].title, 'Ticket Amministrazione')
