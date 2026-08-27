@@ -72,13 +72,14 @@ def ricevuta_apertura_ticket_cliente(ticket):
     return _invia(subject, message, [cliente.email] if cliente.email else [])
 
 
-def aggiornamento_stato_ticket_cliente(ticket, stato_precedente):
+def aggiornamento_stato_ticket_cliente(ticket, stato_precedente, nota=None):
     """Comunicazione al cliente quando lo stato del ticket cambia (assegnazione, in lavorazione, risolto...)."""
     cliente = ticket.created_by
     subject = f"Afterbit - Aggiornamento sul tuo ticket #{ticket.id}"
 
     riga_codice = f"Codice di richiamo: {ticket.codice_riferimento}\n" if ticket.codice_riferimento else ""
     riga_assegnazione = f"Assegnato a: {ticket.assigned_to.username}\n" if ticket.assigned_to else ""
+    riga_nota = f"Nota di aggiornamento:\n{nota}\n\n" if nota else ""
 
     message = (
         f"Ciao {cliente.username},\n\n"
@@ -87,12 +88,13 @@ def aggiornamento_stato_ticket_cliente(ticket, stato_precedente):
         f"Nuovo stato: {ticket.get_status_display()}\n"
         f"{riga_assegnazione}"
         f"{riga_codice}\n"
+        f"{riga_nota}"
         f"Team Afterbit"
     )
     return _invia(subject, message, [cliente.email] if cliente.email else [])
 
 
-def chiusura_ticket_cliente(ticket):
+def chiusura_ticket_cliente(ticket, nota=None):
     """Comunicazione finale al cliente quando il ticket viene chiuso."""
     cliente = ticket.created_by
     subject = f"Afterbit - Il tuo ticket #{ticket.id} è stato chiuso"
@@ -102,10 +104,12 @@ def chiusura_ticket_cliente(ticket):
         f"{ticket.codice_riferimento} per richiamare questo intervento.\n\n"
         if ticket.codice_riferimento else ""
     )
+    riga_nota = f"Nota di chiusura:\n{nota}\n\n" if nota else ""
 
     message = (
         f"Ciao {cliente.username},\n\n"
         f"Il tuo ticket #{ticket.id} ({ticket.title}) è stato chiuso.\n\n"
+        f"{riga_nota}"
         f"{riga_codice}"
         f"Grazie per aver scelto Afterbit.\n\n"
         f"Team Afterbit"

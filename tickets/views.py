@@ -5,7 +5,7 @@ from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.utils import timezone
-from .models import Ticket
+from .models import Ticket, TicketUpdate
 from .forms import TicketForm, TicketStatusForm, CustomerRegistrationForm
 from . import emails
 from . import utils
@@ -164,11 +164,15 @@ def ticket_detail(request, ticket_id):
                 updated_ticket.last_activity_at = timezone.now()
                 updated_ticket.save()
 
-                if stato_cambiato:
+                note_text = request.POST.get('note', '').strip()
+                if note_text:
+                    TicketUpdate.objects.create(ticket=updated_ticket, author=request.user, note=note_text)
+
+                if stato_cambiato or note_text:
                     if updated_ticket.status == 'closed':
-                        emails.chiusura_ticket_cliente(updated_ticket)
+                        emails.chiusura_ticket_cliente(updated_ticket, note_text or None)
                     else:
-                        emails.aggiornamento_stato_ticket_cliente(updated_ticket, stato_precedente)
+                        emails.aggiornamento_stato_ticket_cliente(updated_ticket, stato_precedente, note_text or None)
 
                 messages.success(request, 'Ticket aggiornato con successo.')
                 return redirect('ticket_detail', ticket_id=ticket.id)
@@ -177,9 +181,12 @@ def ticket_detail(request, ticket_id):
         else:
             status_form = TicketStatusForm(instance=ticket)
 
+    updates = ticket.updates.all()
+
     return render(request, 'tickets/ticket_detail.html', {
         'ticket': ticket,
         'status_form': status_form,
+        'updates': updates,
     })
 
 

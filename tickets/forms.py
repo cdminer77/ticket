@@ -13,7 +13,7 @@ INPUT_CLASSES = (
 class TicketForm(forms.ModelForm):
     class Meta:
         model = Ticket
-        fields = ['tipo_intervento', 'title', 'description', 'priority', 'attachment']
+        fields = ['tipo_intervento', 'title', 'referente', 'description', 'attachment']
         widgets = {
             'tipo_intervento': forms.Select(attrs={
                 'class': INPUT_CLASSES
@@ -22,13 +22,14 @@ class TicketForm(forms.ModelForm):
                 'class': INPUT_CLASSES,
                 'placeholder': 'Es. Errore accesso server di posta'
             }),
+            'referente': forms.TextInput(attrs={
+                'class': INPUT_CLASSES,
+                'placeholder': 'Nome e Cognome di chi segnala il problema'
+            }),
             'description': forms.Textarea(attrs={
                 'class': INPUT_CLASSES,
                 'rows': 5,
                 'placeholder': 'Descrivi dettagliatamente il problema riscontrato...'
-            }),
-            'priority': forms.Select(attrs={
-                'class': INPUT_CLASSES
             }),
             'attachment': forms.ClearableFileInput(attrs={
                 'class': 'block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100'

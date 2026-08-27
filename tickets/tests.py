@@ -3,9 +3,8 @@ from django.contrib.auth.models import User
 from django.urls import reverse
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core import mail
-from .models import Ticket
+from .models import Ticket, TicketUpdate
 from unittest.mock import patch
-
 
 
 class TicketSystemTests(TestCase):
@@ -42,10 +41,10 @@ class TicketSystemTests(TestCase):
         self.client.login(username='mario.rossi', password='PasswordSicura123!')
 
         ticket_data = {
-            'tipo_intervento': 'hardware',
+            'tipo_intervento': 'assistenza_tecnica',
             'title': 'Problema VPN aziendale',
+            'referente': 'Mario Rossi',
             'description': 'Impossibile connettersi al gateway principale.',
-            'priority': 'high'
         }
         response = self.client.post(reverse('create_ticket'), ticket_data)
 
@@ -56,16 +55,18 @@ class TicketSystemTests(TestCase):
         self.assertIsNotNone(ticket)
         self.assertEqual(ticket.created_by, self.user)
         self.assertEqual(ticket.status, 'open')
+        self.assertEqual(ticket.priority, 'urgent')
+        self.assertEqual(ticket.referente, 'Mario Rossi')
 
     def test_create_ticket_invalid_form_shows_errors(self):
         self.client.login(username='mario.rossi', password='PasswordSicura123!')
 
         # Titolo mancante -> form non valido
         response = self.client.post(reverse('create_ticket'), {
-            'tipo_intervento': 'posta',
+            'tipo_intervento': 'assistenza_tecnica',
             'title': '',
+            'referente': 'Mario Rossi',
             'description': 'Descrizione senza titolo',
-            'priority': 'low'
         })
 
         self.assertEqual(response.status_code, 200)
@@ -81,10 +82,10 @@ class TicketSystemTests(TestCase):
             content_type='application/pdf'
         )
         response = self.client.post(reverse('create_ticket'), {
-            'tipo_intervento': 'siti',
+            'tipo_intervento': 'assistenza_tecnica',
             'title': 'Ticket con allegato grande',
+            'referente': 'Mario Rossi',
             'description': 'Test dimensione allegato',
-            'priority': 'low',
             'attachment': oversized_file,
         })
 
@@ -165,8 +166,8 @@ class TicketSystemTests(TestCase):
         response = self.client.post(reverse('create_ticket'), {
             'tipo_intervento': '',  # non valido: non e' una delle scelte ammesse
             'title': 'Ticket senza tipo',
+            'referente': 'Mario Rossi',
             'description': 'Manca il tipo di intervento',
-            'priority': 'low'
         })
 
         self.assertEqual(response.status_code, 200)
@@ -176,14 +177,14 @@ class TicketSystemTests(TestCase):
         self.client.login(username='mario.rossi', password='PasswordSicura123!')
 
         self.client.post(reverse('create_ticket'), {
-            'tipo_intervento': 'contabilita',
+            'tipo_intervento': 'amministrazione',
             'title': 'Richiesta fattura',
+            'referente': 'Mario Rossi',
             'description': 'Serve una fattura del mese scorso.',
-            'priority': 'medium'
         })
 
         ticket = Ticket.objects.get(title='Richiesta fattura')
-        self.assertEqual(ticket.tipo_intervento, 'contabilita')
+        self.assertEqual(ticket.tipo_intervento, 'amministrazione')
 
     def test_codice_riferimento_generato_alla_prima_assegnazione(self):
         ticket = Ticket.objects.create(
@@ -399,10 +400,10 @@ class TicketSystemTests(TestCase):
         self.client.login(username='mario.rossi', password='PasswordSicura123!')
 
         self.client.post(reverse('create_ticket'), {
-            'tipo_intervento': 'hardware',
+            'tipo_intervento': 'assistenza_tecnica',
             'title': 'PC non si accende',
+            'referente': 'Mario Rossi',
             'description': 'Il PC in reception non parte piu.',
-            'priority': 'high'
         })
 
         self.assertEqual(len(mail.outbox), 2)
@@ -421,10 +422,10 @@ class TicketSystemTests(TestCase):
         self.client.login(username='cliente.senza.email', password='PasswordSicura123!')
 
         response = self.client.post(reverse('create_ticket'), {
-            'tipo_intervento': 'siti',
+            'tipo_intervento': 'assistenza_tecnica',
             'title': 'Sito lento',
+            'referente': 'Referente Senza Email',
             'description': 'Il sito impiega troppo a caricare.',
-            'priority': 'medium'
         })
 
         self.assertEqual(response.status_code, 302)
@@ -485,10 +486,10 @@ class TicketSystemTests(TestCase):
     def test_creazione_ticket_salva_ip_e_localizzazione_sviluppo(self):
         self.client.login(username='mario.rossi', password='PasswordSicura123!')
         response = self.client.post(reverse('create_ticket'), {
-            'tipo_intervento': 'hardware',
+            'tipo_intervento': 'assistenza_tecnica',
             'title': 'Test IP locale',
+            'referente': 'Mario Rossi',
             'description': 'Descrizione test',
-            'priority': 'medium'
         })
         self.assertEqual(response.status_code, 302)
         ticket = Ticket.objects.get(title='Test IP locale')
@@ -514,10 +515,10 @@ class TicketSystemTests(TestCase):
         response = self.client.post(
             reverse('create_ticket'),
             {
-                'tipo_intervento': 'hardware',
+                'tipo_intervento': 'assistenza_tecnica',
                 'title': 'Test IP pubblico',
+                'referente': 'Mario Rossi',
                 'description': 'Descrizione test',
-                'priority': 'medium'
             },
             REMOTE_ADDR='93.34.12.34'
         )
@@ -550,3 +551,37 @@ class TicketSystemTests(TestCase):
         self.assertContains(response, 'IP di creazione')
         self.assertContains(response, '93.34.12.34')
         self.assertContains(response, 'Milano, Italy')
+
+    def test_normal_user_sees_referente_in_details(self):
+        ticket = Ticket.objects.create(
+            title='Ticket con referente', referente='Luigi Bianchi',
+            description='...', created_by=self.user
+        )
+        self.client.login(username='mario.rossi', password='PasswordSicura123!')
+        response = self.client.get(reverse('ticket_detail', args=[ticket.id]))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Luigi Bianchi')
+
+    def test_staff_adds_note_and_emails_customer(self):
+        ticket = Ticket.objects.create(
+            title='Ticket per note', description='...', created_by=self.user
+        )
+        mail.outbox.clear()
+
+        self.client.login(username='staff.helpdesk', password='PasswordSicura123!')
+        response = self.client.post(reverse('ticket_detail', args=[ticket.id]), {
+            'status': 'in_progress',
+            'assigned_to': self.staff_user.id,
+            'note': 'Siamo al lavoro per risolvere l\'errore del database.',
+        })
+
+        self.assertEqual(response.status_code, 302)
+        ticket.refresh_from_db()
+        self.assertEqual(ticket.updates.count(), 1)
+        update = ticket.updates.first()
+        self.assertEqual(update.note, 'Siamo al lavoro per risolvere l\'errore del database.')
+        self.assertEqual(update.author, self.staff_user)
+
+        # Check email contains the note
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertIn('Siamo al lavoro per risolvere l\'errore del database.', mail.outbox[0].body)

@@ -35,25 +35,20 @@ class Ticket(models.Model):
 
     TIPO_INTERVENTO_CHOICES = [
         ('amministrazione', 'Amministrazione'),
-        ('contabilita', 'Contabilità'),
-        ('domini', 'Assistenza domini'),
-        ('hardware', 'Assistenza Hardware'),
-        ('pec_firme', 'Assistenza PEC e firme digitali'),
-        ('posta', 'Assistenza posta elettronica'),
-        ('siti', 'Assistenza siti internet'),
-        ('feedback', 'Suggerimenti e feedback'),
+        ('assistenza_tecnica', 'Assistenza Tecnica'),
     ]
 
     title = models.CharField(max_length=200, verbose_name="Oggetto / Titolo")
+    referente = models.CharField(max_length=100, default="Non specificato", verbose_name="Nominativo Referente")
     description = models.TextField(verbose_name="Descrizione del problema")
     tipo_intervento = models.CharField(
         max_length=30,
         choices=TIPO_INTERVENTO_CHOICES,
-        default='posta',
+        default='assistenza_tecnica',
         verbose_name="Tipo di intervento richiesto",
     )
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='open')
-    priority = models.CharField(max_length=20, choices=PRIORITY_CHOICES, default='medium')
+    priority = models.CharField(max_length=20, choices=PRIORITY_CHOICES, default='urgent')
     attachment = models.FileField(
         upload_to='ticket_attachments/',
         blank=True,
@@ -103,3 +98,17 @@ class UserProfile(models.Model):
 
     def __str__(self):
         return f"Profilo di {self.user.username}"
+
+
+class TicketUpdate(models.Model):
+    """Note di lavorazione/aggiornamento del ticket inserite dallo staff."""
+    ticket = models.ForeignKey(Ticket, on_delete=models.CASCADE, related_name='updates')
+    author = models.ForeignKey(User, on_delete=models.CASCADE)
+    note = models.TextField(verbose_name="Nota di aggiornamento")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['created_at']
+
+    def __str__(self):
+        return f"Nota su #{self.ticket.id} da {self.author.username}"
