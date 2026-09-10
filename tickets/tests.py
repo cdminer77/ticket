@@ -806,10 +806,11 @@ class TicketSystemTests(TestCase):
     def test_faq_page_contains_comprehensive_email_and_pec_settings(self):
         response = self.client.get(reverse('faq'))
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'Posta in Arrivo (IMAP - Consigliato)')
-        self.assertContains(response, 'mail.tuodominio.it')
-        self.assertContains(response, 'Porta:</strong> 993')
-        self.assertContains(response, 'Porta:</strong> 465')
+        self.assertContains(response, 'Server IMAP (Consigliato)')
+        self.assertContains(response, 'mail.afterbit.it')
+        self.assertContains(response, 'smtp.afterbit.it')
+        self.assertContains(response, '993')
+        self.assertContains(response, '465')
         self.assertContains(response, 'Parametri Casella PEC')
         self.assertContains(response, 'imaps.pec.aruba.it')
 

@@ -1,0 +1,117 @@
+ora possiamo aggiungere  le faq che ti allego:(Per un portale di assistenza e ticketing IT come quello di **AfterBit** (che copre servizi di assistenza sistemistica, hosting, posta elettronica/PEC, sviluppo web e supporto da remoto), le 15 FAQ più utili devono bilanciare **istruzioni operative per l'uso del ticketing**, **soluzioni di primo livello (self-service)** e **chiarimenti su SLA e supporto**.
+
+Ecco una suddivisione logica e pronta all'uso:
+
+---
+
+### 1. Gestione Ticket e Assistenza
+
+#### 1. Come apro un ticket di assistenza e cosa devo includere?
+
+> **Risposta:** Accedi al portale con le tue credenziali (o tramite l'indirizzo email associato al tuo account aziendale) e compila il modulo di richiesta. Per velocizzare la risoluzione, indica:
+> * Una breve descrizione del problema o dell'errore riscontrato.
+> * Screenshot del messaggio di errore o schermata bloccata.
+> * Il dispositivo/servizio coinvolto (es. nome PC, casella mail, dominio).
+> * Se il blocco riguarda un solo utente o l'intera azienda.
+> 
+> 
+
+#### 2. Come verifico lo stato di avanzamento della mia richiesta?
+
+> **Risposta:** Entrando nell'area riservata del portale ticket puoi visualizzare l'elenco di tutte le richieste attive, lo storico dei ticket chiusi, il tecnico assegnato e le note di lavorazione in tempo reale. Riceverai inoltre una notifica email a ogni aggiornamento.
+
+#### 3. Quali sono i tempi di risposta (SLA) e gli orari di presidio?
+
+> **Risposta:** Il servizio standard è attivo dal lunedì al venerdì dalle 09:00 alle 18:00. I tempi di presa in carico variano in base alla priorità assegnata e al contratto di assistenza sottoscritto (es. entro 2-4 ore lavorative per blocchi critici).
+
+#### 4. Come funziona l'assistenza remota sul mio computer?
+
+> **Risposta:** Quando necessario, il tecnico richiederà l'accesso al tuo computer. Ti verrà chiesto di scaricare e avviare il software di teleassistenza (es. AnyDesk / TeamViewer o client proprietario) e comunicare l'ID numerico generato per autorizzare la sessione.
+
+---
+
+### 2. Posta Elettronica, Webmail e PEC
+
+#### 5. Non riesco a inviare o ricevere email: cosa posso controllare prima di aprire un ticket?
+
+> **Risposta:**
+> 1. Verifica che la connessione Internet sia attiva navigando su un qualsiasi sito.
+> 2. Prova ad accedere direttamente tramite la **Webmail** (es. `mail.afterbit.it` o browser) per verificare se le credenziali sono corrette e lo spazio non è esaurito.
+> 3. Se da Webmail funziona ma da client (Outlook/Thunderbird/Apple Mail) no, verifica eventuali avvisi di password scaduta o parametri server (IMAP/SMTP/SSL).
+> 
+> 
+
+#### 6. Ho superato la quota spazio della casella di posta: come procedo?
+
+> **Risposta:** Accedi alla Webmail ed elimina i messaggi pesanti non necessari (ricordando di svuotare la cartella *Cestino* e *Posta Inviata*). Se necessiti di un incremento permanente dello spazio di archiviazione o di un archivio cloud, apri un ticket indicando l'indirizzo email da ampliare.
+
+#### 7. Come configuro una casella email o PEC su un nuovo dispositivo?
+
+> **Risposta:** Consulta la scheda parametri:
+> * **Server Posta in Arrivo (IMAP/SSL):** Porta 993 (consigliato IMAP per sincronizzare tutti i dispositivi).
+> * **Server Posta in Uscita (SMTP/SSL):** Porta 465 o 587 (con autenticazione attiva).
+> * **Nome utente:** Il tuo indirizzo email completo.
+> *(In alternativa, apri un ticket per richiedere il profilo di autoconfigurazione o assistenza guidata).*
+> 
+> 
+
+---
+
+### 3. Hosting, Domini e Servizi Web
+
+#### 8. Il sito web o l'e-commerce restituisce un errore (es. Errore 500, Database Error, Schermata Bianca). Cosa fare?
+
+> **Risposta:** Apri un ticket specificando:
+> * L'URL esatto della pagina che genera l'errore.
+> * Se l'errore è comparso dopo un aggiornamento di plugin/tema, una modifica ai contenuti o se è improvviso.
+> * Uno screenshot dell'errore visualizzato.
+> 
+> 
+
+#### 9. Come richiedo un ripristino da backup (sito, database o file)?
+
+> **Risposta:** Apri un ticket specificando il dominio o la cartella interessata e la data/ora approssimativa a cui desideri ripristinare i dati. I backup automatici consentono recuperi puntuali a seconda del piano hosting attivo.
+
+#### 10. Ho ricevuto un avviso di certificato SSL non valido o scaduto: cosa significa?
+
+> **Risposta:** I certificati SSL (HTTPS) sono solitamente rinnovati in automatico. Se il browser segnala "Connessione non sicura", potrebbe trattarsi di una mancata propagazione del rinnovo o di risorse caricate in HTTP non cifrato (mixed content). Segnalaci l'URL via ticket per una verifica immediata.
+
+---
+
+### 4. Assistenza Sistemistica, Reti e Sicurezza
+
+#### 11. Ho dimenticato o bloccato la password di un account / server / pannello: come posso reimpostarla?
+
+> **Risposta:** Per motivi di sicurezza e conformità GDPR, le richieste di reset credenziali devono essere inoltrate dal titolare dell'account o da un referente aziendale autorizzato registrato a sistema.
+
+#### 12. Sospetto una violazione di sicurezza o una mail di Phishing: come comportarsi?
+
+> **Risposta:**
+> * **Non cliccare** su link e **non aprire** allegati sospetti.
+> * Non inserire password o dati bancari.
+> * Inoltra l'email come allegato (formato `.eml` o `.msg`) al supporto o allega il file al ticket, contrassegnando la richiesta con priorità alta per consentire l'analisi dei log e il blocco a livello server/antispam.
+> 
+> 
+
+#### 13. La connessione verso la rete aziendale o la VPN non funziona. Come isolare il problema?
+
+> **Risposta:**
+> 1. Riavvia il router/modem locale.
+> 2. Verifica che le credenziali VPN (certificato o One-Time Password / 2FA) non siano scadute.
+> 3. Se il problema persiste, apri un ticket indicando il messaggio di errore fornito dal client VPN.
+> 
+> 
+
+---
+
+### 5. Priorità, Emergenze e Amministrazione
+
+#### 14. Cosa devo fare in caso di blocco totale aziendale o emergenza fuori orario?
+
+> **Risposta:** Se disponi di un contratto con reperibilità o SLA critico, utilizza il canale telefonico prioritario dedicato alle emergenze indicato nel tuo contratto, oltre ad aprire un ticket con priorità *Critica/Bloccante* per tracciare la cronologia dell'incidente.
+
+#### 15. Posso abilitare altri colleghi ad aprire o visualizzare i ticket aziendali?
+
+> **Risposta:** Sì. L'amministratore aziendale può richiedere la creazione di nuovi profili utente collegati alla stessa anagrafica cliente o impostare un livello di visibilità globale per monitorare tutti i ticket del team aziendale.
+
+---) nella home di registrazione o accesso utlizzare il logo del sito www.afterbit.com, e mettere un filtro anche alle colonne della dashbord 
