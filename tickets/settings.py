@@ -48,6 +48,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    
 ]
 
 ROOT_URLCONF = 'afterbit_project.urls'
@@ -138,7 +139,7 @@ EMAIL_USE_TLS = True
 EMAIL_USE_SSL = False
 
 # Account Gmail dedicato usato solo per l'invio automatico (non e' info@afterbit.com)
-EMAIL_HOST_USER = 'toscanaccio4.0@gmail.com'
+EMAIL_HOST_USER = 'info@afterbit.com'
 
 # IMPORTANTE: qui va la "Password per le app" di 16 caratteri generata da Google
 # (Account Google > Sicurezza > Verifica in due passaggi > Password per le app),
@@ -149,8 +150,9 @@ EMAIL_HOST_USER = 'toscanaccio4.0@gmail.com'
 EMAIL_HOST_PASSWORD = os.environ.get('AFTERBIT_EMAIL_PASSWORD', '')
 
 # Il cliente vedra' questo come mittente (nome piu' leggibile dell'indirizzo gmail nudo)
-DEFAULT_FROM_EMAIL = 'Afterbit Assistenza <toscanaccio4.0@gmail.com>'
+DEFAULT_FROM_EMAIL = 'Afterbit Assistenza <info@afterbit.com>'
 
 # Indirizzo interno a cui arrivano le notifiche di ogni nuovo ticket, ed a cui
 # vengono reindirizzate automaticamente le risposte dei clienti alle nostre email
 SUPPORT_NOTIFICATION_EMAIL = 'info@afterbit.com'
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

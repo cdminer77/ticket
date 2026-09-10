@@ -1,0 +1,8 @@
+# Apache htaccess configuration
+DirectoryIndex index.html index.php passenger_wsgi.py
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-path
+</IfModule>

@@ -1,93 +1,100 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="it" class="h-full bg-slate-50">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Afterbit - Privacy Policy</title>
+    <title>Afterbit S.r.l. - Informativa sulla Privacy</title>
+    <link rel="icon" type="image/jpeg" href="{% static 'tickets/images/icon.jpg' %}">
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Poppins', 'Inter', sans-serif; }
+        .brand-navy { background-color: #1C244B; }
+        .brand-text-navy { color: #1C244B; }
+        .brand-orange { background-color: #EC3C11; }
+        .brand-orange:hover { background-color: #d63209; }
+        .brand-text-orange { color: #EC3C11; }
+        .brand-border-orange { border-color: #EC3C11; }
+        .brand-slate { color: #324A6D; }
+    </style>
 </head>
-<body class="min-h-full flex flex-col font-sans text-slate-800">
+<body class="min-h-full flex flex-col bg-[#F3F5F8] text-slate-800">
 
-    <header class="bg-white border-b border-slate-200 sticky top-0 z-10 shadow-sm">
-        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between h-16 items-center">
-            <span class="text-xl font-black text-slate-900">AFTERBIT<span class="text-blue-600">.</span></span>
-            <a href="javascript:window.close();" onclick="if(window.opener) { window.close(); } else { window.history.back(); }" class="text-sm font-medium text-slate-600 hover:text-slate-900 transition">Chiudi Finestra</a>
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-10 shadow-xs">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between h-20 items-center">
+            <a href="{% url 'home' %}" class="flex items-center">
+                <img src="{% static 'tickets/images/logo.png' %}" alt="Afterbit Logo" class="h-10 w-auto object-contain">
+            </a>
+            <a href="javascript:window.close();" onclick="if(window.opener) { window.close(); } else { window.history.back(); }" class="text-xs font-semibold text-[#1C244B] hover:text-[#EC3C11] bg-slate-100 hover:bg-slate-200 px-3.5 py-2 rounded-lg border border-slate-200 transition">
+                ← Chiudi o Torna Indietro
+            </a>
         </div>
     </header>
 
-    <main class="flex-1 max-w-4xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        <div class="bg-white border border-slate-200 rounded-2xl p-6 sm:p-10 shadow-sm space-y-8">
-            
-            <div class="border-b border-slate-100 pb-6">
-                <h1 class="text-3xl font-extrabold text-slate-950 tracking-tight">Informativa sulla Privacy</h1>
-                <p class="text-xs text-slate-400 mt-2 font-mono">Ultimo aggiornamento: 26 Agosto 2026</p>
+    <main class="flex-1 max-w-4xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="bg-white border border-slate-200 rounded-2xl p-6 sm:p-10 shadow-sm space-y-6 leading-relaxed">
+            <div class="border-b border-slate-100 pb-5">
+                <h1 class="text-2xl font-extrabold text-[#1C244B]">Informativa sul Trattamento dei Dati Personali</h1>
+                <p class="text-xs text-[#324A6D] mt-1">Ai sensi dell'art. 13 del Regolamento UE 2016/679 (GDPR)</p>
             </div>
 
-            <section class="space-y-4">
-                <h2 class="text-xl font-bold text-slate-900">1. Titolare del Trattamento dei Dati</h2>
-                <p class="text-sm text-slate-600 leading-relaxed">
-                    Il Titolare del trattamento è <strong>Afterbit S.r.l.</strong>, con sede legale in Italia, email di contatto: 
-                    <a href="mailto:privacy@afterbit.com" class="text-blue-600 hover:underline">privacy@afterbit.com</a>.
+            <section class="space-y-2 text-xs sm:text-sm text-slate-700">
+                <h2 class="text-base font-bold text-[#1C244B]">1. Titolare del Trattamento</h2>
+                <p>
+                    Il Titolare del trattamento dei dati personali è <strong>Afterbit S.r.l.</strong>, con sede legale e operativa indicata sul sito ufficiale <a href="https://www.afterbit.it" target="_blank" class="text-[#EC3C11] hover:underline">www.afterbit.it</a>, contattabile per qualsiasi chiarimento all'indirizzo email <a href="mailto:info@afterbit.com" class="text-[#EC3C11] hover:underline">info@afterbit.com</a>.
                 </p>
             </section>
 
-            <section class="space-y-4">
-                <h2 class="text-xl font-bold text-slate-900">2. Tipologie di Dati Raccolti</h2>
-                <p class="text-sm text-slate-600 leading-relaxed">
-                    Attraverso il nostro portale di assistenza clienti raccogliamo i seguenti dati personali:
-                </p>
-                <ul class="list-disc pl-5 text-sm text-slate-600 space-y-2">
-                    <li><strong>Dati di registrazione:</strong> Nome utente (username), indirizzo email, ed eventualmente numero di telefono fornito volontariamente.</li>
-                    <li><strong>Dati dei Ticket:</strong> Titolo dell'intervento, descrizione dettagliata del problema tecnico riscontrato ed eventuali file allegati.</li>
-                    <li><strong>Dati Diagnostici (Metadati):</strong> Indirizzo IP da cui viene inoltrata la richiesta e la relativa localizzazione geografica dell'indirizzo IP (Nazione, Regione, Città, ISP) per scopi di diagnostica e sicurezza informatica.</li>
+            <section class="space-y-2 text-xs sm:text-sm text-slate-700">
+                <h2 class="text-base font-bold text-[#1C244B]">2. Tipologia di Dati Raccolti</h2>
+                <p>Nell'ambito dell'utilizzo del portale di assistenza e gestione ticket vengono trattati i seguenti dati:</p>
+                <ul class="list-disc pl-5 space-y-1">
+                    <li><strong>Dati anagrafici e di contatto:</strong> nome utente, indirizzo email aziendale, numero telefonico (se fornito), nominativo del referente.</li>
+                    <li><strong>Dati di natura tecnica:</strong> indirizzo IP del richiedente, posizione geografica approssimativa ricavata da IP, log di accesso, data e ora di apertura e aggiornamento dei ticket.</li>
+                    <li><strong>Contenuti dei ticket:</strong> descrizioni, log di errore e file allegati volontariamente inseriti dall'utente per la risoluzione dell'assistenza tecnica.</li>
                 </ul>
             </section>
 
-            <section class="space-y-4">
-                <h2 class="text-xl font-bold text-slate-900">3. Finalità del Trattamento</h2>
-                <p class="text-sm text-slate-600 leading-relaxed">
-                    I dati personali raccolti sono trattati per le seguenti finalità:
-                </p>
-                <ul class="list-disc pl-5 text-sm text-slate-600 space-y-2">
-                    <li>Fornire il servizio di assistenza e supporto tecnico richiesto dal cliente tramite l'apertura e la lavorazione dei ticket.</li>
-                    <li>Inviare comunicazioni e-mail automatiche di notifica circa lo stato di avanzamento e aggiornamento del ticket (apertura, assegnazione, risoluzione, chiusura).</li>
-                    <li>Garantire la sicurezza del portale e prevenire abusi, frodi o attività di spamming (compreso l'uso della geolocalizzazione IP e del meccanismo captcha).</li>
+            <section class="space-y-2 text-xs sm:text-sm text-slate-700">
+                <h2 class="text-base font-bold text-[#1C244B]">3. Finalità e Base Giuridica del Trattamento</h2>
+                <p>I dati personali sono trattati per le seguenti finalità:</p>
+                <ul class="list-disc pl-5 space-y-1">
+                    <li><strong>Erogazione del servizio di assistenza:</strong> presa in carico, tracciamento, gestione ed evasione delle richieste di supporto tecnico e amministrativo (base giuridica: esecuzione contrattuale o misure precontrattuali, art. 6.1.b GDPR).</li>
+                    <li><strong>Sicurezza e prevenzione abusi:</strong> monitoraggio della sicurezza informatica, rilevamento tentativi di frode e protezione dei sistemi (base giuridica: legittimo interesse del titolare, art. 6.1.f GDPR).</li>
+                    <li><strong>Adempimento di obblighi legali e fiscali:</strong> conservazione a fini di legge (base giuridica: obbligo legale, art. 6.1.c GDPR).</li>
                 </ul>
             </section>
 
-            <section class="space-y-4">
-                <h2 class="text-xl font-bold text-slate-900">4. Base Giuridica del Trattamento</h2>
-                <p class="text-sm text-slate-600 leading-relaxed">
-                    Il trattamento dei dati si fonda su:
-                </p>
-                <ul class="list-disc pl-5 text-sm text-slate-600 space-y-2">
-                    <li><strong>Esecuzione di un contratto</strong> o di misure precontrattuali per quanto riguarda la fornitura del servizio di assistenza tecnica richiesto.</li>
-                    <li><strong>Legittimo interesse</strong> del Titolare nella tutela della sicurezza informatica della propria infrastruttura web.</li>
-                    <li>Il <strong>consenso esplicito</strong> dell'utente fornito in fase di registrazione per l'accettazione della presente informativa.</li>
-                </ul>
-            </section>
-
-            <section class="space-y-4">
-                <h2 class="text-xl font-bold text-slate-900">5. Conservazione dei Dati</h2>
-                <p class="text-sm text-slate-600 leading-relaxed">
-                    I dati verranno conservati per il tempo strettamente necessario all'espletamento del servizio di assistenza e secondo i termini di legge per fini fiscali o contrattuali (fino a 10 anni dalla chiusura del rapporto contrattuale). I dati diagnostici IP vengono conservati per un periodo non superiore a 6 mesi, salvo specifiche esigenze legali.
+            <section class="space-y-2 text-xs sm:text-sm text-slate-700">
+                <h2 class="text-base font-bold text-[#1C244B]">4. Conservazione dei Dati</h2>
+                <p>
+                    I dati raccolti saranno conservati per il tempo strettamente necessario all'evasione delle richieste di assistenza tecnica e alla gestione della cronologia contrattuale, nel rispetto dei termini di prescrizione legale e degli obblighi di conservazione documentale.
                 </p>
             </section>
 
-            <section class="space-y-4">
-                <h2 class="text-xl font-bold text-slate-900">6. Diritti dell'Interessato</h2>
-                <p class="text-sm text-slate-600 leading-relaxed">
-                    In conformità con il Regolamento Europeo GDPR (Reg. UE 2016/679), gli utenti hanno il diritto in qualunque momento di accedere ai propri dati personali, chiederne la rettifica, la cancellazione, la limitazione del trattamento o opporsi al loro utilizzo scrivendo all'indirizzo <a href="mailto:privacy@afterbit.com" class="text-blue-600 hover:underline">privacy@afterbit.com</a>.
+            <section class="space-y-2 text-xs sm:text-sm text-slate-700">
+                <h2 class="text-base font-bold text-[#1C244B]">5. Diritti dell'Interessato</h2>
+                <p>
+                    In ogni momento, l'utente può esercitare i propri diritti previsti dagli articoli 15 e seguenti del GDPR (accesso, rettifica, cancellazione, limitazione, opposizione al trattamento e portabilità) inviando una comunicazione a <a href="mailto:info@afterbit.com" class="text-[#EC3C11] hover:underline font-medium">info@afterbit.com</a>.
                 </p>
             </section>
-
-            <div class="border-t border-slate-100 pt-6 flex justify-between items-center flex-wrap gap-4 text-xs text-slate-400">
-                <p>&copy; 2026 Afterbit S.r.l. - Tutti i diritti riservati.</p>
-                <p>Conforme al GDPR (Regolamento UE 2016/679)</p>
-            </div>
-
         </div>
     </main>
 
+    <footer class="bg-white border-t border-slate-200 mt-12 py-6">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
+            <div class="flex items-center space-x-2">
+                <img src="{% static 'tickets/images/logo.png' %}" alt="Afterbit" class="h-6 w-auto object-contain">
+                <span>&copy; 2026 Afterbit S.r.l. - Tutti i diritti riservati.</span>
+            </div>
+            <div class="flex items-center space-x-4">
+                <a href="{% url 'faq' %}" class="hover:text-slate-800 transition">FAQ</a>
+                <a href="https://www.afterbit.it" target="_blank" class="hover:text-slate-800 transition">Afterbit.it ↗</a>
+            </div>
+        </div>
+    </footer>
 </body>
 </html>

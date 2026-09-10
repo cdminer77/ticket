@@ -1,30 +1,58 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="it" class="h-full bg-slate-50">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Afterbit - Dashboard Ticket</title>
+    <link rel="icon" type="image/jpeg" href="{% static 'tickets/images/icon.jpg' %}">
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Poppins', 'Inter', sans-serif; }
+        .brand-navy { background-color: #1C244B; }
+        .brand-navy-border { border-color: #1C244B; }
+        .brand-text-navy { color: #1C244B; }
+        .brand-orange { background-color: #EC3C11; }
+        .brand-orange:hover { background-color: #d63209; }
+        .brand-text-orange { color: #EC3C11; }
+        .brand-border-orange { border-color: #EC3C11; }
+        .brand-slate { color: #324A6D; }
+    </style>
 </head>
-<body class="min-h-full flex flex-col">
+<body class="min-h-full flex flex-col bg-[#F3F5F8] text-slate-800">
 
     <!-- Header / Navbar -->
-    <header class="bg-white border-b border-slate-200">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between h-16 items-center">
-            <span class="text-xl font-black text-slate-900">AFTERBIT<span class="text-blue-600">.</span></span>
-            <div class="flex items-center space-x-4 text-sm">
-                <span class="text-slate-600">Connesso come <strong>{{ request.user.username }}</strong></span>
-                <a href="{% url 'logout' %}" class="text-red-600 hover:text-red-800 font-medium">Esci</a>
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
+        <div class="max-w-[1700px] w-full mx-auto px-4 sm:px-6 lg:px-8 flex justify-between h-20 items-center">
+            <div class="flex items-center space-x-4">
+                <a href="{% url 'dashboard' %}" class="flex items-center">
+                    <img src="{% static 'tickets/images/logo.png' %}" alt="Afterbit Logo" class="h-10 w-auto object-contain">
+                </a>
+                <span class="hidden sm:inline-block text-xs bg-slate-100 text-[#1C244B] px-3 py-1 rounded-full font-semibold border border-slate-200">
+                    {% if request.user.is_staff %}Staff Helpdesk{% else %}Area Clienti{% endif %}
+                </span>
+            </div>
+            <div class="flex items-center space-x-3 text-sm">
+                <a href="{% url 'faq' %}" class="text-slate-600 hover:text-[#EC3C11] font-medium text-xs bg-slate-50 hover:bg-slate-100 px-3.5 py-2 rounded-lg transition border border-slate-200 flex items-center gap-1.5">
+                    <span>💡</span> FAQ & Guida
+                </a>
+                <span class="hidden md:inline-block text-slate-500 text-xs pl-2">
+                    Utente: <strong class="text-[#1C244B] font-semibold">{{ request.user.username }}</strong>
+                </span>
+                <a href="{% url 'logout' %}" class="text-red-600 hover:text-red-700 font-medium transition text-xs bg-red-50 hover:bg-red-100 px-3 py-2 rounded-lg border border-red-200">Esci</a>
             </div>
         </div>
     </header>
 
-    <!-- Main Content -->
-    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Main Content (Spacious & Responsive) -->
+    <main class="flex-1 max-w-[1700px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
 
         {% if messages %}
             {% for message in messages %}
-                <div class="mb-6 p-4 rounded-lg text-sm border
+                <div class="mb-6 p-4 rounded-xl text-sm border shadow-sm
                     {% if message.tags == 'error' %} bg-red-50 text-red-700 border-red-200
                     {% else %} bg-emerald-50 text-emerald-800 border-emerald-200 {% endif %}">
                     {{ message }}
@@ -32,135 +60,311 @@
             {% endfor %}
         {% endif %}
 
-        <div class="flex justify-between items-center mb-6">
+        <!-- TOP BAR: Title, FAQ link & New Ticket Button -->
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
             <div>
-                <h1 class="text-2xl font-bold text-slate-900">{% if request.user.is_staff %}Tutti i Ticket{% else %}I tuoi Ticket{% endif %}</h1>
-                <p class="text-sm text-slate-500">Elenco delle richieste di supporto aperte e concluse.</p>
+                <h1 class="text-2xl font-extrabold text-[#1C244B] tracking-tight">Centro Assistenza & Gestione Ticket</h1>
+                <p class="text-xs text-[#324A6D] mt-0.5 font-normal">Pannello di controllo per la gestione e l'avanzamento delle richieste di supporto.</p>
             </div>
-            <a href="{% url 'create_ticket' %}" class="bg-blue-600 hover:bg-blue-500 text-white font-semibold px-4 py-2 rounded-lg text-sm transition">
-                + Nuovo Ticket
-            </a>
+            <div class="flex items-center gap-2.5">
+                <a href="{% url 'faq' %}" class="inline-flex items-center justify-center gap-1.5 bg-white hover:bg-slate-50 text-[#1C244B] border border-slate-300 font-semibold px-3.5 py-2.5 rounded-xl text-xs transition shadow-sm">
+                    <span>📖</span> Consulta FAQ
+                </a>
+                <a href="{% url 'create_ticket' %}" class="inline-flex items-center justify-center gap-1.5 brand-orange text-white font-semibold px-4 py-2.5 rounded-xl text-xs transition shadow-sm hover:shadow">
+                    <span class="text-base font-bold">+</span> Nuovo Ticket
+                </a>
+            </div>
         </div>
 
-        <!-- Filtri di ricerca -->
-        <form method="GET" class="bg-white border border-slate-200 rounded-xl p-4 mb-6 shadow-sm flex flex-col md:flex-row gap-4 items-end">
-            <div class="flex-1 w-full">
-                <label for="filter_q" class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Cerca</label>
-                <input id="filter_q" type="text" name="q" value="{{ q }}" placeholder="Cerca per ID, Oggetto, Descrizione, Referente..." class="w-full border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-700">
+        <!-- 3 MAIN TABS -->
+        <div class="border-b border-slate-200 mb-6">
+            <nav class="flex space-x-6" aria-label="Tabs">
+                <!-- Tab 1: Ticket aperti -->
+                <a href="?tab=open{% if q %}&q={{ q }}{% endif %}{% if selected_categoria %}&categoria={{ selected_categoria }}{% endif %}{% if sort_by %}&sort={{ sort_by }}&order={{ order }}{% endif %}&per_page={{ per_page }}" 
+                   class="py-3 px-2 inline-flex items-center gap-2 border-b-2 text-xs sm:text-sm font-semibold transition
+                   {% if active_tab == 'open' %} border-[#EC3C11] text-[#EC3C11] {% else %} border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300 {% endif %}">
+                    <span>★</span> Ticket aperti
+                    <span class="ml-1.5 py-0.5 px-2.5 rounded-full text-xs font-bold {% if active_tab == 'open' %} bg-orange-50 text-[#EC3C11] border border-orange-200 {% else %} bg-slate-100 text-slate-600 {% endif %}">
+                        {{ open_count }}
+                    </span>
+                </a>
+
+                <!-- Tab 2: Ticket chiusi -->
+                <a href="?tab=closed{% if q %}&q={{ q }}{% endif %}{% if selected_categoria %}&categoria={{ selected_categoria }}{% endif %}{% if sort_by %}&sort={{ sort_by }}&order={{ order }}{% endif %}&per_page={{ per_page }}" 
+                   class="py-3 px-2 inline-flex items-center gap-2 border-b-2 text-xs sm:text-sm font-semibold transition
+                   {% if active_tab == 'closed' %} border-[#EC3C11] text-[#EC3C11] {% else %} border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300 {% endif %}">
+                    <span>🗑</span> Ticket chiusi
+                    <span class="ml-1.5 py-0.5 px-2.5 rounded-full text-xs font-bold {% if active_tab == 'closed' %} brand-orange text-white {% else %} bg-slate-100 text-slate-600 {% endif %}">
+                        {{ closed_count }}
+                    </span>
+                </a>
+
+                <!-- Tab 3: Tutti i ticket -->
+                <a href="?tab=all{% if q %}&q={{ q }}{% endif %}{% if selected_categoria %}&categoria={{ selected_categoria }}{% endif %}{% if sort_by %}&sort={{ sort_by }}&order={{ order }}{% endif %}&per_page={{ per_page }}" 
+                   class="py-3 px-2 inline-flex items-center gap-2 border-b-2 text-xs sm:text-sm font-semibold transition
+                   {% if active_tab == 'all' %} border-[#EC3C11] text-[#EC3C11] {% else %} border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300 {% endif %}">
+                    <span>📥</span> Tutti i ticket
+                    <span class="ml-1.5 py-0.5 px-2.5 rounded-full text-xs font-bold {% if active_tab == 'all' %} bg-orange-50 text-[#EC3C11] border border-orange-200 {% else %} bg-slate-100 text-slate-600 {% endif %}">
+                        {{ total_count }}
+                    </span>
+                </a>
+            </nav>
+        </div>
+
+        <!-- CONTROLS BAR: Items per page, Category filter & Search -->
+        <form method="GET" class="bg-white border border-slate-200 rounded-xl p-3.5 mb-6 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
+            <input type="hidden" name="tab" value="{{ active_tab }}">
+            <input type="hidden" name="sort" value="{{ sort_by }}">
+            <input type="hidden" name="order" value="{{ order }}">
+            
+            <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
+                <!-- Items per page -->
+                <div class="flex items-center gap-2 text-xs text-slate-500">
+                    <select name="per_page" onchange="this.form.submit()" class="border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#EC3C11] text-slate-700 bg-slate-50">
+                        <option value="25" {% if per_page == 25 %}selected{% endif %}>25 per pagina</option>
+                        <option value="50" {% if per_page == 50 %}selected{% endif %}>50 per pagina</option>
+                        <option value="100" {% if per_page == 100 %}selected{% endif %}>100 per pagina</option>
+                    </select>
+                </div>
+
+                <!-- Categoria Filter -->
+                <div class="w-full sm:w-72">
+                    <select name="categoria" onchange="this.form.submit()" class="w-full border border-slate-300 rounded-lg px-3 py-1.5 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[#EC3C11] text-slate-700 bg-slate-50">
+                        <option value="">Tutte le Categorie ({{ categoria_choices|length }})</option>
+                        {% for val, label in categoria_choices %}
+                            <option value="{{ val }}" {% if selected_categoria == val %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
             </div>
 
-            <div class="w-full md:w-48">
-                <label for="filter_status" class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Stato</label>
-                <select id="filter_status" name="status" class="w-full border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-700">
-                    <option value="">Tutti</option>
-                    {% for value, name in status_choices %}
-                        <option value="{{ value }}" {% if selected_status == value %}selected{% endif %}>{{ name }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-
-            <div class="w-full md:w-48">
-                <label for="filter_tipo" class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Tipo Intervento</label>
-                <select id="filter_tipo" name="tipo_intervento" class="w-full border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-700">
-                    <option value="">Tutti</option>
-                    {% for value, name in tipo_choices %}
-                        <option value="{{ value }}" {% if selected_tipo == value %}selected{% endif %}>{{ name }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-
-            <div class="flex gap-2 w-full md:w-auto">
-                <button type="submit" class="flex-1 md:flex-none bg-blue-600 hover:bg-blue-500 text-white font-semibold px-4 py-2 rounded-lg text-sm transition">
-                    Filtra
-                </button>
-                {% if q or selected_status or selected_tipo %}
-                    <a href="{% url 'dashboard' %}" class="flex-1 md:flex-none text-center bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold px-4 py-2 rounded-lg text-sm transition">
-                        Reset
-                    </a>
-                {% endif %}
+            <!-- Search input on the right -->
+            <div class="w-full md:w-80 relative">
+                <input type="text" name="q" value="{{ q }}" placeholder="Cerca ID, oggetto, utente, categoria..." 
+                       class="w-full border border-slate-300 rounded-lg pl-9 pr-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-[#EC3C11] text-slate-700 bg-white placeholder-slate-400">
+                <span class="absolute left-3 top-2 text-slate-400 text-xs">🔍</span>
             </div>
         </form>
 
+        <!-- DATA TABLE WITH INTERACTIVE COLUMN SORTING & OPTIMIZED COLUMNS -->
         <div class="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
-            <table class="min-w-full divide-y divide-slate-200 text-left text-sm">
-                <thead class="bg-slate-50 text-slate-500 font-semibold">
-                    <tr>
-                        <th scope="col" class="px-6 py-3">ID</th>
-                        <th scope="col" class="px-6 py-3">Oggetto</th>
-                        <th scope="col" class="px-6 py-3">Priorità</th>
-                        <th scope="col" class="px-6 py-3">Stato</th>
-                        <th scope="col" class="px-6 py-3">Data apertura</th>
-                        <th scope="col" class="px-6 py-3">Ultima lavorazione</th>
-                        <th scope="col" class="px-6 py-3"><span class="sr-only">Azioni</span></th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-100 text-slate-700">
-                    {% for ticket in tickets %}
-                        <tr class="hover:bg-slate-50 transition">
-                            <td class="px-6 py-4 font-mono text-xs text-slate-400">#{{ ticket.id }}</td>
-                            <td class="px-6 py-4 font-medium text-slate-900">{{ ticket.title }}</td>
-                            <td class="px-6 py-4">
-                                <span class="inline-flex px-2 py-0.5 text-xs font-semibold rounded-full 
-                                    {% if ticket.priority == 'urgent' %} bg-red-100 text-red-700
-                                    {% elif ticket.priority == 'high' %} bg-orange-100 text-orange-700
-                                    {% elif ticket.priority == 'medium' %} bg-yellow-100 text-yellow-700
-                                    {% else %} bg-slate-100 text-slate-700 {% endif %}">
-                                    {{ ticket.get_priority_display }}
-                                </span>
-                            </td>
-                            <td class="px-6 py-4">
-                                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-bold rounded-full 
-                                    {% if ticket.status == 'open' %} bg-blue-100 text-blue-700
-                                    {% elif ticket.status == 'in_progress' %} bg-purple-100 text-purple-700
-                                    {% elif ticket.status == 'resolved' %} bg-emerald-100 text-emerald-700
-                                    {% else %} bg-slate-100 text-slate-700 {% endif %}">
-                                    <span class="text-lg leading-none" aria-hidden="true">
-                                        {% if ticket.status == 'open' %}🔵
-                                        {% elif ticket.status == 'in_progress' %}🟣
-                                        {% elif ticket.status == 'resolved' %}🟢
-                                        {% else %}⚫{% endif %}
-                                    </span>
-                                    {{ ticket.get_status_display }}
-                                </span>
-                            </td>
-                            <td class="px-6 py-4 text-xs text-slate-400">{{ ticket.created_at|date:"d/m/Y H:i" }}</td>
-                            <td class="px-6 py-4 text-xs text-slate-400">
-                                {% if ticket.last_activity_at %}
-                                    {{ ticket.last_activity_at|date:"d/m/Y H:i" }}
-                                {% else %}
-                                    <span class="text-slate-300">Mai lavorato</span>
-                                {% endif %}
-                            </td>
-                            <td class="px-6 py-4 text-right">
-                                <a href="{% url 'ticket_detail' ticket.id %}" class="text-blue-600 hover:text-blue-800 font-medium text-xs" aria-label="Dettagli ticket numero {{ ticket.id }}: {{ ticket.title }}">
-                                    Dettagli →
-                                </a>
-                            </td>
-                        </tr>
-                    {% empty %}
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-slate-200 text-left text-xs">
+                    <thead class="bg-slate-50 text-slate-600 font-bold uppercase tracking-wider text-[11px]">
                         <tr>
-                            <td colspan="7" class="px-6 py-8 text-center text-slate-400">
-                                Nessun ticket presente. Clicca su "+ Nuovo Ticket" per aprirne uno.
-                            </td>
+                            <!-- 1. ID Column Sort -->
+                            <th scope="col" class="px-3.5 py-3.5 whitespace-nowrap w-28">
+                                <a href="?sort=id&order={% if sort_by == 'id' and order == 'asc' %}desc{% else %}asc{% endif %}&tab={{ active_tab }}{% if q %}&q={{ q }}{% endif %}{% if selected_categoria %}&categoria={{ selected_categoria }}{% endif %}&per_page={{ per_page }}" 
+                                   class="group inline-flex items-center gap-1 hover:text-[#EC3C11] transition" title="Ordina per ID">
+                                    <span>ID</span>
+                                    {% if sort_by == 'id' %}
+                                        <span class="text-[#EC3C11] font-extrabold">{% if order == 'asc' %}▲{% else %}▼{% endif %}</span>
+                                    {% else %}
+                                        <span class="text-slate-300 group-hover:text-slate-500 text-[10px]">⇅</span>
+                                    {% endif %}
+                                </a>
+                            </th>
+
+                            <!-- 2. Oggetto Column Sort -->
+                            <th scope="col" class="px-3.5 py-3.5 min-w-[240px] max-w-md">
+                                <a href="?sort=title&order={% if sort_by == 'title' and order == 'asc' %}desc{% else %}asc{% endif %}&tab={{ active_tab }}{% if q %}&q={{ q }}{% endif %}{% if selected_categoria %}&categoria={{ selected_categoria }}{% endif %}&per_page={{ per_page }}" 
+                                   class="group inline-flex items-center gap-1 hover:text-[#EC3C11] transition" title="Ordina per Oggetto">
+                                    <span>Oggetto</span>
+                                    {% if sort_by == 'title' %}
+                                        <span class="text-[#EC3C11] font-extrabold">{% if order == 'asc' %}▲{% else %}▼{% endif %}</span>
+                                    {% else %}
+                                        <span class="text-slate-300 group-hover:text-slate-500 text-[10px]">⇅</span>
+                                    {% endif %}
+                                </a>
+                            </th>
+
+                            <!-- 3. Categoria Column Sort -->
+                            <th scope="col" class="px-3.5 py-3.5 whitespace-nowrap min-w-[130px]">
+                                <a href="?sort=categoria&order={% if sort_by == 'categoria' and order == 'asc' %}desc{% else %}asc{% endif %}&tab={{ active_tab }}{% if q %}&q={{ q }}{% endif %}{% if selected_categoria %}&categoria={{ selected_categoria }}{% endif %}&per_page={{ per_page }}" 
+                                   class="group inline-flex items-center gap-1 hover:text-[#EC3C11] transition" title="Ordina per Categoria">
+                                    <span>Categoria</span>
+                                    {% if sort_by == 'categoria' %}
+                                        <span class="text-[#EC3C11] font-extrabold">{% if order == 'asc' %}▲{% else %}▼{% endif %}</span>
+                                    {% else %}
+                                        <span class="text-slate-300 group-hover:text-slate-500 text-[10px]">⇅</span>
+                                    {% endif %}
+                                </a>
+                            </th>
+
+                            <!-- 4. Utente Column Sort -->
+                            <th scope="col" class="px-3.5 py-3.5 min-w-[180px] max-w-[260px]">
+                                <a href="?sort=user&order={% if sort_by == 'user' and order == 'asc' %}desc{% else %}asc{% endif %}&tab={{ active_tab }}{% if q %}&q={{ q }}{% endif %}{% if selected_categoria %}&categoria={{ selected_categoria }}{% endif %}&per_page={{ per_page }}" 
+                                   class="group inline-flex items-center gap-1 hover:text-[#EC3C11] transition" title="Ordina per Utente">
+                                    <span>Utente</span>
+                                    {% if sort_by == 'user' %}
+                                        <span class="text-[#EC3C11] font-extrabold">{% if order == 'asc' %}▲{% else %}▼{% endif %}</span>
+                                    {% else %}
+                                        <span class="text-slate-300 group-hover:text-slate-500 text-[10px]">⇅</span>
+                                    {% endif %}
+                                </a>
+                            </th>
+
+                            <!-- 5. Apertura Column Sort -->
+                            <th scope="col" class="px-3.5 py-3.5 whitespace-nowrap min-w-[110px]">
+                                <a href="?sort=created_at&order={% if sort_by == 'created_at' and order == 'asc' %}desc{% else %}asc{% endif %}&tab={{ active_tab }}{% if q %}&q={{ q }}{% endif %}{% if selected_categoria %}&categoria={{ selected_categoria }}{% endif %}&per_page={{ per_page }}" 
+                                   class="group inline-flex items-center gap-1 hover:text-[#EC3C11] transition" title="Ordina per Data di Apertura">
+                                    <span>Apertura</span>
+                                    {% if sort_by == 'created_at' %}
+                                        <span class="text-[#EC3C11] font-extrabold">{% if order == 'asc' %}▲{% else %}▼{% endif %}</span>
+                                    {% else %}
+                                        <span class="text-slate-300 group-hover:text-slate-500 text-[10px]">⇅</span>
+                                    {% endif %}
+                                </a>
+                            </th>
+
+                            <!-- 6. Risposta / Stato Column Sort -->
+                            <th scope="col" class="px-3.5 py-3.5 whitespace-nowrap min-w-[130px]">
+                                <a href="?sort=status&order={% if sort_by == 'status' and order == 'asc' %}desc{% else %}asc{% endif %}&tab={{ active_tab }}{% if q %}&q={{ q }}{% endif %}{% if selected_categoria %}&categoria={{ selected_categoria }}{% endif %}&per_page={{ per_page }}" 
+                                   class="group inline-flex items-center gap-1 hover:text-[#EC3C11] transition" title="Ordina per Stato">
+                                    <span>Risposta / Stato</span>
+                                    {% if sort_by == 'status' %}
+                                        <span class="text-[#EC3C11] font-extrabold">{% if order == 'asc' %}▲{% else %}▼{% endif %}</span>
+                                    {% else %}
+                                        <span class="text-slate-300 group-hover:text-slate-500 text-[10px]">⇅</span>
+                                    {% endif %}
+                                </a>
+                            </th>
+
+                            <!-- 7. Commenti Column Sort -->
+                            <th scope="col" class="px-3.5 py-3.5 whitespace-nowrap text-center min-w-[80px]">
+                                <a href="?sort=num_updates&order={% if sort_by == 'num_updates' and order == 'asc' %}desc{% else %}asc{% endif %}&tab={{ active_tab }}{% if q %}&q={{ q }}{% endif %}{% if selected_categoria %}&categoria={{ selected_categoria }}{% endif %}&per_page={{ per_page }}" 
+                                   class="group inline-flex items-center gap-1 hover:text-[#EC3C11] transition" title="Ordina per Numero Commenti">
+                                    <span>Note</span>
+                                    {% if sort_by == 'num_updates' %}
+                                        <span class="text-[#EC3C11] font-extrabold">{% if order == 'asc' %}▲{% else %}▼{% endif %}</span>
+                                    {% else %}
+                                        <span class="text-slate-300 group-hover:text-slate-500 text-[10px]">⇅</span>
+                                    {% endif %}
+                                </a>
+                            </th>
+                            <th scope="col" class="px-3.5 py-3.5 text-right whitespace-nowrap min-w-[90px]"><span class="sr-only">Azione</span></th>
                         </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 text-slate-700 bg-white">
+                        {% for ticket in tickets %}
+                            <tr class="hover:bg-slate-50/90 transition items-center">
+                                <!-- 1. ID -->
+                                <td class="px-3.5 py-3.5 font-mono font-bold text-slate-700 text-xs whitespace-nowrap">
+                                    <span class="bg-slate-100 px-2 py-0.5 rounded border border-slate-200">{{ ticket.codice_riferimento|default:ticket.id }}</span>
+                                </td>
 
-        {% if tickets.paginator.num_pages > 1 %}
-            <div class="mt-6 flex justify-center items-center gap-4 text-sm">
-                {% if tickets.has_previous %}
-                    <a href="?page={{ tickets.previous_page_number }}{% if q %}&q={{ q }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}{% if selected_tipo %}&tipo_intervento={{ selected_tipo }}{% endif %}" class="text-blue-600 hover:text-blue-800 font-medium">← Precedente</a>
-                {% endif %}
-                <span class="text-slate-500">Pagina {{ tickets.number }} di {{ tickets.paginator.num_pages }}</span>
-                {% if tickets.has_next %}
-                    <a href="?page={{ tickets.next_page_number }}{% if q %}&q={{ q }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}{% if selected_tipo %}&tipo_intervento={{ selected_tipo }}{% endif %}" class="text-blue-600 hover:text-blue-800 font-medium">Successiva →</a>
-                {% endif %}
+                                <!-- 2. Oggetto -->
+                                <td class="px-3.5 py-3.5 font-semibold text-slate-900 min-w-[240px] max-w-md">
+                                    <a href="{% url 'ticket_detail' ticket.id %}" class="hover:text-[#EC3C11] transition block line-clamp-2" title="{{ ticket.title }}">
+                                        {{ ticket.title }}
+                                    </a>
+                                </td>
+
+                                <!-- 3. Categoria -->
+                                <td class="px-3.5 py-3.5 whitespace-nowrap text-slate-600">
+                                    <span class="inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-medium bg-orange-50 text-[#1C244B] border border-orange-100">
+                                        {{ ticket.categoria|default:"Sito Web" }}
+                                    </span>
+                                </td>
+
+                                <!-- 4. Utente -->
+                                <td class="px-3.5 py-3.5 min-w-[180px] max-w-[260px]">
+                                    <div class="font-medium text-slate-900 truncate" title="{{ ticket.referente|default:ticket.created_by.username }}">
+                                        {{ ticket.referente|default:ticket.created_by.username }}
+                                    </div>
+                                    <div class="text-[10px] text-slate-400 truncate">
+                                        {% if ticket.assigned_to %}
+                                            <span class="text-blue-600 font-medium">Op: {{ ticket.assigned_to.username }}</span> &bull; 
+                                        {% endif %}
+                                        {{ ticket.created_from_location|default:"Italia" }}
+                                    </div>
+                                </td>
+
+                                <!-- 5. Apertura -->
+                                <td class="px-3.5 py-3.5 whitespace-nowrap text-slate-500 font-medium">
+                                    {{ ticket.created_at|date:"d/m/Y H:i" }}
+                                </td>
+
+                                <!-- 6. Risposta / Stato -->
+                                <td class="px-3.5 py-3.5 whitespace-nowrap">
+                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-semibold rounded-full 
+                                        {% if ticket.status == 'open' %} bg-blue-50 text-blue-700 border border-blue-200
+                                        {% elif ticket.status == 'in_progress' %} bg-amber-50 text-amber-700 border border-amber-200
+                                        {% elif ticket.status == 'resolved' %} bg-emerald-50 text-emerald-700 border border-emerald-200
+                                        {% else %} bg-slate-100 text-slate-600 border border-slate-200 {% endif %}">
+                                        <span class="w-1.5 h-1.5 rounded-full 
+                                            {% if ticket.status == 'open' %} bg-blue-500
+                                            {% elif ticket.status == 'in_progress' %} bg-amber-500
+                                            {% elif ticket.status == 'resolved' %} bg-emerald-500
+                                            {% else %} bg-slate-400 {% endif %}"></span>
+                                        {{ ticket.get_status_display }}
+                                    </span>
+                                    {% if ticket.rating %}
+                                        <span class="inline-flex items-center gap-0.5 ml-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-600 border border-amber-200" title="Valutato {{ ticket.rating }} su 5 stelle">
+                                            <span>⭐</span> {{ ticket.rating }}/5
+                                        </span>
+                                    {% endif %}
+                                </td>
+
+                                <!-- 7. Commenti / Note -->
+                                <td class="px-3.5 py-3.5 whitespace-nowrap text-center">
+                                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold {% if ticket.num_updates > 0 %} bg-orange-50 text-[#EC3C11] border border-orange-200 {% else %} text-slate-400 {% endif %}">
+                                        💬 {{ ticket.num_updates }}
+                                    </span>
+                                </td>
+
+                                <!-- Action -->
+                                <td class="px-3.5 py-3.5 whitespace-nowrap text-right">
+                                    <a href="{% url 'ticket_detail' ticket.id %}" class="bg-white hover:bg-[#1C244B] hover:text-white text-slate-700 font-semibold px-3 py-1.5 rounded-lg text-xs transition border border-slate-300 shadow-xs inline-block">
+                                        Gestisci →
+                                    </a>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="8" class="px-6 py-12 text-center text-slate-400">
+                                    <div class="text-3xl mb-2">📭</div>
+                                    <div class="font-medium text-sm text-slate-600">Nessun ticket trovato</div>
+                                    <div class="text-xs mt-1">Non ci sono ticket corrispondenti ai filtri o alla scheda selezionata.</div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
-        {% endif %}
 
+            <!-- Pagination (preserving filters and sorting) -->
+            {% if tickets.has_other_pages %}
+                <div class="px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-xs">
+                    <span class="text-slate-500">
+                        Pagina <strong>{{ tickets.number }}</strong> di <strong>{{ tickets.paginator.num_pages }}</strong> ({{ tickets.paginator.count }} ticket totali)
+                    </span>
+                    <div class="flex gap-1">
+                        {% if tickets.has_previous %}
+                            <a href="?page={{ tickets.previous_page_number }}&tab={{ active_tab }}{% if q %}&q={{ q }}{% endif %}{% if selected_categoria %}&categoria={{ selected_categoria }}{% endif %}{% if sort_by %}&sort={{ sort_by }}&order={{ order }}{% endif %}&per_page={{ per_page }}" class="px-3 py-1 bg-white border border-slate-300 rounded-md font-medium text-slate-700 hover:bg-slate-50">Precedente</a>
+                        {% endif %}
+                        {% if tickets.has_next %}
+                            <a href="?page={{ tickets.next_page_number }}&tab={{ active_tab }}{% if q %}&q={{ q }}{% endif %}{% if selected_categoria %}&categoria={{ selected_categoria }}{% endif %}&per_page={{ per_page }}" class="px-3 py-1 bg-white border border-slate-300 rounded-md font-medium text-slate-700 hover:bg-slate-50">Successiva</a>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endif %}
+        </div>
     </main>
 
+    <!-- Footer -->
+    <footer class="bg-white border-t border-slate-200 mt-12 py-6">
+        <div class="max-w-[1700px] w-full mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
+            <div class="flex items-center space-x-2">
+                <img src="{% static 'tickets/images/logo.png' %}" alt="Afterbit" class="h-6 w-auto object-contain">
+                <span>&copy; 2026 Afterbit S.r.l. &bull; Helpdesk & Gestione Ticket</span>
+            </div>
+            <div class="flex items-center space-x-4">
+                <a href="{% url 'faq' %}" class="hover:text-slate-800 transition">Domande Frequenti (FAQ)</a>
+                <a href="{% url 'privacy_policy' %}" class="hover:text-slate-800 transition underline">Privacy Policy</a>
+                <a href="https://www.afterbit.it" target="_blank" class="hover:text-slate-800 transition">Sito Ufficiale Afterbit.it ↗</a>
+            </div>
+        </div>
+    </footer>
 </body>
 </html>

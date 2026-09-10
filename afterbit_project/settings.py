@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.1/ref/settings/
 """
 
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -23,9 +24,30 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-$e%qu66jeg-pmkf1^@%#jvpg!@h^bx77(yeb+%s5qtsc+_piq+'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get('DJANGO_ENV') != 'production' and os.environ.get('DJANGO_DEBUG', '1') == '1'
 
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
+ALLOWED_HOSTS = [
+    'test100.afterbit.it',
+    'afterbit.it',
+    'www.afterbit.it',
+    '127.0.0.1',
+    'localhost',
+    '*'
+]
+
+CSRF_TRUSTED_ORIGINS = [
+    'https://test100.afterbit.it',
+    'http://test100.afterbit.it',
+    'https://afterbit.it',
+    'https://www.afterbit.it',
+    'http://127.0.0.1:8000',
+    'http://localhost:8000',
+]
+
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+USE_X_FORWARDED_HOST = False
+USE_X_FORWARDED_PORT = True
+
 
 
 
@@ -75,12 +97,31 @@ WSGI_APPLICATION = 'afterbit_project.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.1/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+# Usa SQLite in locale (Windows o sviluppo) e MySQL in produzione (Linux/Server)
+IS_LOCAL_DEV = os.environ.get('DJANGO_ENV') != 'production' and (os.name == 'nt' or os.environ.get('USE_SQLITE') == '1')
+
+if IS_LOCAL_DEV and not os.environ.get('USE_MYSQL'):
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.mysql',
+            'NAME': 'afterbit-test100',
+            'USER': 'afterbit-test100',
+            'PASSWORD': '33fvBnIVpx0PGnLhxTXT',
+            'HOST': os.environ.get('DB_HOST', '148.251.75.142'),
+            'PORT': '3306',
+            'OPTIONS': {
+                'charset': 'utf8mb4',
+                'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+            }
+        }
+    }
 
 
 # Password validation
@@ -101,6 +142,14 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+import sys
+if 'test' in sys.argv:
+    PASSWORD_HASHERS = [
+        'django.contrib.auth.hashers.MD5PasswordHasher',
+        'django.contrib.auth.hashers.PBKDF2PasswordHasher',
+        'django.contrib.auth.hashers.PBKDF2SHA1PasswordHasher',
+    ]
+
 
 # Internationalization
 # https://docs.djangoproject.com/en/6.1/topics/i18n/
@@ -120,12 +169,12 @@ LOGIN_URL = 'login'
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/6.1/howto/static-files/
 
-STATIC_URL = 'static/'
-STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'static'
 
 # File caricati dagli utenti (allegati ticket)
 # https://docs.djangoproject.com/en/6.1/topics/files/
-MEDIA_URL = 'media/'
+MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
 STORAGES = {
@@ -133,7 +182,7 @@ STORAGES = {
         "BACKEND": "django.core.files.storage.FileSystemStorage",
     },
     "staticfiles": {
-        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
     },
 }
 
@@ -142,13 +191,17 @@ STORAGES = {
 import os
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
+EMAIL_HOST = os.environ.get('EMAIL_HOST', '127.0.0.1' if os.environ.get('DJANGO_ENV') == 'production' else 'smtp.afterbit.it')
+EMAIL_PORT = int(os.environ.get('EMAIL_PORT', 25 if os.environ.get('DJANGO_ENV') == 'production' else 587))
+EMAIL_USE_TLS = False if os.environ.get('DJANGO_ENV') == 'production' else True
 EMAIL_USE_SSL = False
-EMAIL_HOST_USER = 'afterbitassistenza@gmail.com'
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
 EMAIL_HOST_PASSWORD = os.environ.get('AFTERBIT_EMAIL_PASSWORD', '')
-DEFAULT_FROM_EMAIL = 'Afterbit Assistenza <afterbitassistenza@gmail.com>'
+EMAIL_TIMEOUT = 5
+DEFAULT_FROM_EMAIL = 'Afterbit Assistenza <info@afterbit.com>'
 SUPPORT_NOTIFICATION_EMAIL = 'info@afterbit.com'
+
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
 
 

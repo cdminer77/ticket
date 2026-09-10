@@ -29,6 +29,14 @@ class TicketSystemTests(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertRedirects(response, reverse('dashboard'))
 
+    def test_login_with_email_and_redirect(self):
+        response = self.client.post(reverse('login'), {
+            'username': 'mario.rossi@example.com',
+            'password': 'PasswordSicura123!'
+        })
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response, reverse('dashboard'))
+
     def test_login_invalid_credentials_shows_error(self):
         response = self.client.post(reverse('login'), {
             'username': 'mario.rossi',
@@ -44,6 +52,7 @@ class TicketSystemTests(TestCase):
             'tipo_intervento': 'assistenza_tecnica',
             'title': 'Problema VPN aziendale',
             'referente': 'Mario Rossi',
+            'categoria': 'Sito Web',
             'description': 'Impossibile connettersi al gateway principale.',
         }
         response = self.client.post(reverse('create_ticket'), ticket_data)
@@ -66,6 +75,7 @@ class TicketSystemTests(TestCase):
             'tipo_intervento': 'assistenza_tecnica',
             'title': '',
             'referente': 'Mario Rossi',
+            'categoria': 'Sito Web',
             'description': 'Descrizione senza titolo',
         })
 
@@ -85,6 +95,7 @@ class TicketSystemTests(TestCase):
             'tipo_intervento': 'assistenza_tecnica',
             'title': 'Ticket con allegato grande',
             'referente': 'Mario Rossi',
+            'categoria': 'Sito Web',
             'description': 'Test dimensione allegato',
             'attachment': oversized_file,
         })
@@ -146,16 +157,59 @@ class TicketSystemTests(TestCase):
         self.assertEqual(ticket.status, 'in_progress')
         self.assertEqual(ticket.assigned_to, self.staff_user)
 
-    def test_ticket_search_finds_existing_ticket(self):
+    def test_ticket_search_finds_existing_ticket_with_valid_email(self):
         ticket = Ticket.objects.create(title='Ticket ricercabile', description='...', created_by=self.user)
 
-        response = self.client.get(reverse('ticket_search'), {'code': str(ticket.id)})
+        response = self.client.get(reverse('ticket_search'), {
+            'code': str(ticket.id),
+            'verify_contact': 'mario.rossi@example.com'
+        })
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Ticket ricercabile')
 
+    def test_ticket_search_finds_ticket_with_referente_or_azienda(self):
+        ticket = Ticket.objects.create(
+            title='Ticket con azienda',
+            referente='Acme Corp Srl',
+            description='...',
+            created_by=self.user
+        )
+
+        response = self.client.get(reverse('ticket_search'), {
+            'code': str(ticket.id),
+            'verify_contact': 'Acme Corp Srl'
+        })
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Ticket con azienda')
+
+    def test_ticket_search_rejects_without_verification_contact(self):
+        ticket = Ticket.objects.create(title='Ticket privato', description='...', created_by=self.user)
+
+        response = self.client.get(reverse('ticket_search'), {'code': str(ticket.id)})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, 'Ticket privato')
+        self.assertContains(response, 'tutelare la privacy')
+
+    def test_ticket_search_rejects_wrong_verification_contact(self):
+        ticket = Ticket.objects.create(title='Ticket privato', description='...', created_by=self.user)
+
+        response = self.client.get(reverse('ticket_search'), {
+            'code': str(ticket.id),
+            'verify_contact': 'hacker@sconosciuto.it'
+        })
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, 'Ticket privato')
+        self.assertContains(response, 'Nessun ticket trovato o dati di verifica non corrispondenti')
+
     def test_ticket_search_no_result_for_invalid_code(self):
-        response = self.client.get(reverse('ticket_search'), {'code': '999999'})
+        response = self.client.get(reverse('ticket_search'), {
+            'code': '999999',
+            'verify_contact': 'mario.rossi@example.com'
+        })
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Nessun ticket trovato')
@@ -180,6 +234,7 @@ class TicketSystemTests(TestCase):
             'tipo_intervento': 'amministrazione',
             'title': 'Richiesta fattura',
             'referente': 'Mario Rossi',
+            'categoria': 'Fatture e contabilità',
             'description': 'Serve una fattura del mese scorso.',
         })
 
@@ -236,16 +291,16 @@ class TicketSystemTests(TestCase):
 
     # --- Blocco 2: dashboard ---
 
-    def test_dashboard_mostra_colonna_ultima_lavorazione(self):
+    def test_dashboard_mostra_colonne_e_stato(self):
         Ticket.objects.create(title='Ticket senza lavorazione', description='...', created_by=self.user)
 
         self.client.login(username='mario.rossi', password='PasswordSicura123!')
         response = self.client.get(reverse('dashboard'))
 
-        self.assertContains(response, 'Ultima lavorazione')
-        self.assertContains(response, 'Mai lavorato')
+        self.assertContains(response, 'Apertura')
+        self.assertContains(response, 'Risposta / Stato')
 
-    def test_dashboard_mostra_data_ultima_lavorazione_dopo_assegnazione(self):
+    def test_dashboard_mostra_operatore_assegnato(self):
         ticket = Ticket.objects.create(title='Ticket assegnato', description='...', created_by=self.user)
 
         self.client.login(username='staff.helpdesk', password='PasswordSicura123!')
@@ -255,7 +310,7 @@ class TicketSystemTests(TestCase):
         })
 
         response = self.client.get(reverse('dashboard'))
-        self.assertNotContains(response, 'Mai lavorato')
+        self.assertContains(response, 'staff.helpdesk')
 
     # --- Blocco 3: registrazione clienti ---
 
@@ -320,6 +375,13 @@ class TicketSystemTests(TestCase):
         self.assertFalse(User.objects.filter(username='nuovo.utente').exists())
 
     # --- Blocco 3.5: captcha di sicurezza ---
+
+    def test_captcha_domanda_visibile_in_get(self):
+        response = self.client.get(reverse('register'))
+        self.assertEqual(response.status_code, 200)
+        q = self.client.session.get('captcha_question')
+        self.assertIsNotNone(q)
+        self.assertContains(response, f"Verifica di sicurezza: quanto fa {q}?")
 
     def test_registrazione_fallisce_con_captcha_errato(self):
         session = self.client.session
@@ -403,6 +465,7 @@ class TicketSystemTests(TestCase):
             'tipo_intervento': 'assistenza_tecnica',
             'title': 'PC non si accende',
             'referente': 'Mario Rossi',
+            'categoria': 'Sito Web',
             'description': 'Il PC in reception non parte piu.',
         })
 
@@ -425,6 +488,7 @@ class TicketSystemTests(TestCase):
             'tipo_intervento': 'assistenza_tecnica',
             'title': 'Sito lento',
             'referente': 'Referente Senza Email',
+            'categoria': 'Sito Web',
             'description': 'Il sito impiega troppo a caricare.',
         })
 
@@ -443,10 +507,12 @@ class TicketSystemTests(TestCase):
         self.client.post(reverse('ticket_detail', args=[ticket.id]), {
             'status': 'in_progress',
             'assigned_to': self.staff_user.id,
+            'action': 'save_and_notify',
         })
 
         self.assertEqual(len(mail.outbox), 1)
-        self.assertEqual(mail.outbox[0].to, ['mario.rossi@example.com'])
+        self.assertIn('mario.rossi@example.com', mail.outbox[0].to)
+        self.assertIn('info@afterbit.com', mail.outbox[0].to)
         self.assertIn('In Lavorazione', mail.outbox[0].body)
 
     def test_chiusura_ticket_invia_email_dedicata_al_cliente(self):
@@ -460,10 +526,12 @@ class TicketSystemTests(TestCase):
         self.client.post(reverse('ticket_detail', args=[ticket.id]), {
             'status': 'closed',
             'assigned_to': self.staff_user.id,
+            'action': 'save_and_notify',
         })
 
         self.assertEqual(len(mail.outbox), 1)
-        self.assertEqual(mail.outbox[0].to, ['mario.rossi@example.com'])
+        self.assertIn('mario.rossi@example.com', mail.outbox[0].to)
+        self.assertIn('info@afterbit.com', mail.outbox[0].to)
         self.assertIn('chiuso', mail.outbox[0].subject.lower())
 
     def test_nessuna_email_se_lo_stato_non_cambia(self):
@@ -479,6 +547,7 @@ class TicketSystemTests(TestCase):
         self.client.post(reverse('ticket_detail', args=[ticket.id]), {
             'status': 'in_progress',  # invariato
             'assigned_to': self.staff_user.id,
+            'action': 'save_and_notify',
         })
 
         self.assertEqual(len(mail.outbox), 0)
@@ -489,6 +558,7 @@ class TicketSystemTests(TestCase):
             'tipo_intervento': 'assistenza_tecnica',
             'title': 'Test IP locale',
             'referente': 'Mario Rossi',
+            'categoria': 'Sito Web',
             'description': 'Descrizione test',
         })
         self.assertEqual(response.status_code, 302)
@@ -518,6 +588,7 @@ class TicketSystemTests(TestCase):
                 'tipo_intervento': 'assistenza_tecnica',
                 'title': 'Test IP pubblico',
                 'referente': 'Mario Rossi',
+                'categoria': 'Sito Web',
                 'description': 'Descrizione test',
             },
             REMOTE_ADDR='93.34.12.34'
@@ -573,6 +644,7 @@ class TicketSystemTests(TestCase):
             'status': 'in_progress',
             'assigned_to': self.staff_user.id,
             'note': 'Siamo al lavoro per risolvere l\'errore del database.',
+            'action': 'save_and_notify',
         })
 
         self.assertEqual(response.status_code, 302)
@@ -621,3 +693,149 @@ class TicketSystemTests(TestCase):
         response = self.client.get(reverse('dashboard'), {'tipo_intervento': 'amministrazione'})
         self.assertEqual(len(response.context['tickets']), 1)
         self.assertEqual(response.context['tickets'][0].title, 'Ticket Amministrazione')
+
+    def test_user_marco_creates_ticket_smoothly_with_urgent_priority(self):
+        marco = User.objects.create_user(
+            username='marco',
+            password='PasswordSicura123!',
+            email='marco@afterbit.com'
+        )
+        self.client.login(username='marco', password='PasswordSicura123!')
+
+        response = self.client.post(reverse('create_ticket'), {
+            'tipo_intervento': 'assistenza_tecnica',
+            'title': 'Ticket di Marco',
+            'referente': 'Marco Rossi',
+            'categoria': 'Posta elettronica',
+            'description': 'Problema con la casella IMAP.',
+        })
+
+        self.assertEqual(response.status_code, 302)
+        ticket = Ticket.objects.get(title='Ticket di Marco')
+        self.assertEqual(ticket.created_by, marco)
+        self.assertEqual(ticket.priority, 'urgent')
+        self.assertEqual(ticket.categoria, 'Posta elettronica')
+
+    def test_dashboard_and_detail_do_not_contain_servizio_column_or_priority_selector(self):
+        ticket = Ticket.objects.create(
+            title='Ticket senza servizio visibile',
+            description='Test visualizzazione pulita',
+            created_by=self.user,
+            categoria='Posta certificata'
+        )
+        self.client.login(username='staff.helpdesk', password='PasswordSicura123!')
+
+        # Dashboard check
+        dashboard_response = self.client.get(reverse('dashboard'))
+        self.assertEqual(dashboard_response.status_code, 200)
+        self.assertContains(dashboard_response, 'Posta certificata')
+
+        # Detail check
+        detail_response = self.client.get(reverse('ticket_detail', args=[ticket.id]))
+        self.assertEqual(detail_response.status_code, 200)
+        self.assertNotContains(detail_response, 'Modifica Priorità')
+
+    def test_customer_reply_to_ticket_with_attachment_and_reopen(self):
+        ticket = Ticket.objects.create(
+            title='Problema email',
+            description='Descrizione iniziale',
+            created_by=self.user,
+            status='closed'
+        )
+        self.client.login(username='mario.rossi', password='PasswordSicura123!')
+
+        test_file = SimpleUploadedFile('screenshot_errore.png', b'file_data_here', content_type='image/png')
+
+        response = self.client.post(
+            reverse('ticket_detail', args=[ticket.id]),
+            {
+                'action': 'reply',
+                'note': 'Ecco lo screenshot aggiuntivo richiesto dal tecnico.',
+                'attachment': test_file
+            }
+        )
+        self.assertEqual(response.status_code, 302)
+
+        ticket.refresh_from_db()
+        # The ticket should be reopened since customer replied to a closed ticket
+        self.assertEqual(ticket.status, 'in_progress')
+        self.assertEqual(ticket.updates.count(), 1)
+
+        update = ticket.updates.first()
+        self.assertEqual(update.author, self.user)
+        self.assertIn('screenshot_errore', update.attachment.name)
+        self.assertEqual(update.note, 'Ecco lo screenshot aggiuntivo richiesto dal tecnico.')
+
+    def test_customer_submit_feedback_five_stars(self):
+        ticket = Ticket.objects.create(
+            title='Intervento risolto',
+            description='Problema risolto con successo',
+            created_by=self.user,
+            status='resolved'
+        )
+        self.client.login(username='mario.rossi', password='PasswordSicura123!')
+
+        response = self.client.post(
+            reverse('ticket_detail', args=[ticket.id]),
+            {
+                'action': 'submit_feedback',
+                'rating': '5',
+                'rating_comment': 'Servizio impeccabile e veloce!'
+            }
+        )
+        self.assertEqual(response.status_code, 302)
+
+        ticket.refresh_from_db()
+        self.assertEqual(ticket.rating, 5)
+        self.assertEqual(ticket.rating_comment, 'Servizio impeccabile e veloce!')
+        self.assertIsNotNone(ticket.rated_at)
+
+        # Verify feedback is visible in detail view
+        get_response = self.client.get(reverse('ticket_detail', args=[ticket.id]))
+        self.assertContains(get_response, 'Valutazione Servizio: 5 su 5 Stelle')
+        self.assertContains(get_response, 'Servizio impeccabile e veloce!')
+
+    def test_create_ticket_page_shows_logged_in_user_info(self):
+        self.client.login(username='mario.rossi', password='PasswordSicura123!')
+        response = self.client.get(reverse('create_ticket'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'mario.rossi')
+        self.assertContains(response, 'mario.rossi@example.com')
+        self.assertContains(response, 'Richiedente / Account Autenticato')
+
+    def test_faq_page_contains_comprehensive_email_and_pec_settings(self):
+        response = self.client.get(reverse('faq'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Posta in Arrivo (IMAP - Consigliato)')
+        self.assertContains(response, 'mail.tuodominio.it')
+        self.assertContains(response, 'Porta:</strong> 993')
+        self.assertContains(response, 'Porta:</strong> 465')
+        self.assertContains(response, 'Parametri Casella PEC')
+        self.assertContains(response, 'imaps.pec.aruba.it')
+
+    def test_customer_can_close_ticket_anytime_with_reason(self):
+        ticket = Ticket.objects.create(
+            title='Ticket da chiudere autonomamente',
+            description='Problema temporaneo',
+            created_by=self.user,
+            status='open'
+        )
+        self.client.login(username='mario.rossi', password='PasswordSicura123!')
+
+        response = self.client.post(
+            reverse('ticket_detail', args=[ticket.id]),
+            {
+                'action': 'close_by_customer',
+                'close_reason': 'Risolto riavviando il router.'
+            }
+        )
+        self.assertEqual(response.status_code, 302)
+
+        ticket.refresh_from_db()
+        self.assertEqual(ticket.status, 'closed')
+        self.assertEqual(ticket.updates.count(), 1)
+        update = ticket.updates.first()
+        self.assertIn('Risolto riavviando il router', update.note)
+        self.assertEqual(update.author, self.user)
+
+

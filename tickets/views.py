@@ -1,28 +1,28 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.utils import timezone
-from django.db.models import Q
-from .models import Ticket, TicketUpdate
-from .forms import TicketForm, TicketStatusForm, CustomerRegistrationForm
+from django.db.models import Q, Count
+from .models import Ticket, TicketUpdate, CATEGORIA_CHOICES
+from .forms import (
+    TicketForm, TicketStatusForm, CustomerRegistrationForm,
+    TicketReplyForm, TicketFeedbackForm
+)
 from . import emails
 from . import utils
 
-TICKETS_PER_PAGE = 15
-
+TICKETS_PER_PAGE = 25
 
 def home(request):
-    """Pagina pubblica di benvenuto."""
     if request.user.is_authenticated:
         return redirect('dashboard')
     return render(request, 'home.html')
 
-
 def register(request):
-    """Registrazione pubblica self-service per nuovi clienti."""
     if request.user.is_authenticated:
         return redirect('dashboard')
 
@@ -32,13 +32,11 @@ def register(request):
             user = form.save()
             login(request, user)
             messages.success(request, 'Registrazione completata! Benvenuto su Afterbit.')
-            # Rimuove il captcha risolto dalla sessione per sicurezza
             request.session.pop('captcha_question', None)
             request.session.pop('captcha_answer', None)
             return redirect('dashboard')
         else:
             messages.error(request, 'Controlla i campi evidenziati e riprova.')
-            # Rigenera il captcha in caso di fallimento
             utils.generate_captcha(request)
             form.fields['captcha'].label = f"Verifica di sicurezza: quanto fa {request.session.get('captcha_question')}?"
     else:
@@ -47,36 +45,60 @@ def register(request):
 
     return render(request, 'auth/register.html', {'form': form})
 
-
 def ticket_search(request):
-    """Ricerca pubblica di un ticket tramite il suo codice (ID)."""
     code = request.GET.get('code', '').strip()
+    verify_contact = request.GET.get('verify_contact', '').strip()
     ticket = None
-    searched = bool(code)
+    searched = bool(code or verify_contact)
+    error_message = None
 
-    if code:
-        # Il codice atteso e' l'ID numerico, eventualmente preceduto da '#'
-        clean_code = code.lstrip('#')
-        if clean_code.isdigit():
-            ticket = Ticket.objects.filter(id=int(clean_code)).first()
+    if searched:
+        if not code or not verify_contact:
+            error_message = (
+                "Per tutelare la privacy e la sicurezza delle informazioni, "
+                "è necessario inserire sia il codice del ticket che l'email, "
+                "il nome azienda/referente o il numero di telefono associato."
+            )
+        else:
+            clean_code = code.lstrip('#')
+            candidate = None
+            if clean_code.isdigit():
+                candidate = Ticket.objects.filter(Q(id=int(clean_code)) | Q(codice_riferimento__iexact=code)).first()
+            else:
+                candidate = Ticket.objects.filter(codice_riferimento__iexact=code).first()
+
+            if candidate and utils.verify_ticket_ownership(candidate, verify_contact):
+                ticket = candidate
+            else:
+                error_message = (
+                    "Nessun ticket trovato o dati di verifica non corrispondenti. "
+                    "Assicurati di aver inserito correttamente il codice del ticket e il dato di contatto "
+                    "(email aziendale, nominativo referente/azienda o telefono) associato alla richiesta."
+                )
 
     return render(request, 'ticket_search.html', {
         'ticket': ticket,
         'searched': searched,
         'code': code,
+        'verify_contact': verify_contact,
+        'error_message': error_message,
     })
-
 
 def user_login(request):
     if request.user.is_authenticated:
         return redirect('dashboard')
 
     if request.method == 'POST':
-        username = request.POST.get('username', '')
-        password = request.POST.get('password', '')
+        login_input = request.POST.get('username', '').strip()
+        password = request.POST.get('password', '').strip()
         remember_me = request.POST.get('remember_me')
 
-        user = authenticate(request, username=username, password=password)
+        user = authenticate(request, username=login_input, password=password)
+        if user is None and '@' in login_input:
+            matched_user = User.objects.filter(email__iexact=login_input).first()
+            if matched_user:
+                user = authenticate(request, username=matched_user.username, password=password)
+
         if user is not None:
             login(request, user)
             if not remember_me:
@@ -85,58 +107,116 @@ def user_login(request):
         else:
             messages.error(request, 'Credenziali non valide.')
 
-        # Ripopola lo username inserito (mai la password) cosi' l'utente
-        # non deve riscrivere tutto dopo un errore
-        return render(request, 'auth/login.html', {'username': username})
+        return render(request, 'auth/login.html', {'username': login_input})
 
     return render(request, 'auth/login.html')
-
 
 def user_logout(request):
     logout(request)
     return redirect('login')
 
-
 @login_required
 def dashboard(request):
-    if request.user.is_staff:
-        tickets_qs = Ticket.objects.all()
-    else:
-        tickets_qs = Ticket.objects.filter(created_by=request.user)
+    base_qs = Ticket.objects.all() if request.user.is_staff else Ticket.objects.filter(created_by=request.user)
 
-    # Leggi i parametri di filtraggio
+    # Calculate Tab Counts
+    open_count = base_qs.filter(status__in=['open', 'in_progress']).count()
+    closed_count = base_qs.filter(status__in=['resolved', 'closed']).count()
+    total_count = base_qs.count()
+
     q = request.GET.get('q', '').strip()
     status_filter = request.GET.get('status', '').strip()
-    tipo_filter = request.GET.get('tipo_intervento', '').strip()
+    categoria_filter = request.GET.get('categoria', '').strip()
+    per_page = int(request.GET.get('per_page', TICKETS_PER_PAGE))
 
-    # Applica i filtri
+    # Read tab filter (default: 'open' unless status filter specifies closed status)
+    active_tab = request.GET.get('tab', '').strip()
+    if not active_tab:
+        if status_filter in ['resolved', 'closed']:
+            active_tab = 'closed'
+        elif status_filter in ['open', 'in_progress']:
+            active_tab = 'open'
+        elif status_filter:
+            active_tab = 'all'
+        else:
+            active_tab = 'open'
+
+    tickets_qs = base_qs
+
+    if active_tab == 'open':
+        tickets_qs = tickets_qs.filter(status__in=['open', 'in_progress'])
+    elif active_tab == 'closed':
+        tickets_qs = tickets_qs.filter(status__in=['resolved', 'closed'])
+    # active_tab == 'all' shows all
+
     if q:
+        clean_q = q.replace('#', '')
         tickets_qs = tickets_qs.filter(
-            Q(id__icontains=q.replace('#', '')) |
+            Q(id__icontains=clean_q) |
+            Q(codice_riferimento__icontains=q) |
             Q(title__icontains=q) |
             Q(description__icontains=q) |
-            Q(referente__icontains=q)
+            Q(referente__icontains=q) |
+            Q(servizio__icontains=q) |
+            Q(categoria__icontains=q)
         )
 
     if status_filter:
         tickets_qs = tickets_qs.filter(status=status_filter)
 
-    if tipo_filter:
-        tickets_qs = tickets_qs.filter(tipo_intervento=tipo_filter)
+    if categoria_filter:
+        tickets_qs = tickets_qs.filter(categoria=categoria_filter)
 
-    paginator = Paginator(tickets_qs, TICKETS_PER_PAGE)
+    tipo_intervento_filter = request.GET.get('tipo_intervento', '').strip()
+    if tipo_intervento_filter:
+        tickets_qs = tickets_qs.filter(tipo_intervento=tipo_intervento_filter)
+
+    # Annotate comments/updates count
+    tickets_qs = tickets_qs.annotate(num_updates=Count('updates')).select_related('created_by', 'assigned_to')
+
+    # Sorting logic
+    sort_by = request.GET.get('sort', 'created_at').strip()
+    order = request.GET.get('order', 'desc').strip()
+    if order not in ['asc', 'desc']:
+        order = 'desc'
+
+    sort_field_map = {
+        'id': 'id',
+        'title': 'title',
+        'servizio': 'servizio',
+        'categoria': 'categoria',
+        'user': 'created_by__username',
+        'created_at': 'created_at',
+        'status': 'status',
+        'num_updates': 'num_updates',
+    }
+
+    db_sort_field = sort_field_map.get(sort_by, 'created_at')
+    order_expression = db_sort_field if order == 'asc' else f"-{db_sort_field}"
+    tickets_qs = tickets_qs.order_by(order_expression)
+
+    paginator = Paginator(tickets_qs, per_page)
     page_number = request.GET.get('page')
     tickets = paginator.get_page(page_number)
 
     return render(request, 'tickets/dashboard.html', {
         'tickets': tickets,
         'q': q,
+        'active_tab': active_tab,
+        'open_count': open_count,
+        'closed_count': closed_count,
+        'total_count': total_count,
         'selected_status': status_filter,
-        'selected_tipo': tipo_filter,
+        'selected_categoria': categoria_filter,
         'status_choices': Ticket.STATUS_CHOICES,
-        'tipo_choices': Ticket.TIPO_INTERVENTO_CHOICES,
+        'categoria_choices': CATEGORIA_CHOICES,
+        'per_page': per_page,
+        'sort_by': sort_by,
+        'order': order,
     })
 
+def faq(request):
+    return render(request, 'faq.html')
 
 @login_required
 def create_ticket(request):
@@ -146,47 +226,96 @@ def create_ticket(request):
             ticket = form.save(commit=False)
             ticket.created_by = request.user
 
-            # Geolocalizzazione dell'IP del cliente
             client_ip = utils.get_client_ip(request)
             ticket.created_from_ip = client_ip
             ticket.created_from_location = utils.get_ip_location(client_ip)
 
             ticket.save()
+            ticket.genera_codice_riferimento()
+            ticket.save()
 
             emails.notifica_nuovo_ticket_staff(ticket)
             emails.ricevuta_apertura_ticket_cliente(ticket)
 
-            messages.success(request, 'Ticket inviato con successo! Riceverai una email di conferma.')
+            messages.success(request, f'Ticket #{ticket.id} ({ticket.codice_riferimento}) aperto con successo!')
             return redirect('dashboard')
         else:
             messages.error(request, 'Controlla i campi evidenziati e riprova.')
     else:
-        form = TicketForm()
+        initial_referente = request.user.get_full_name() or request.user.username
+        form = TicketForm(initial={'referente': initial_referente})
 
     return render(request, 'tickets/create_ticket.html', {'form': form})
 
-
 @login_required
 def ticket_detail(request, ticket_id):
-    """Dettaglio ticket. Lo staff puo' anche aggiornare stato/assegnazione."""
     if request.user.is_staff:
         ticket = get_object_or_404(Ticket, id=ticket_id)
     else:
-        # Un utente normale vede solo i propri ticket
         ticket = get_object_or_404(Ticket, id=ticket_id, created_by=request.user)
 
     status_form = None
     if request.user.is_staff:
-        if request.method == 'POST':
-            stato_precedente = ticket.status  # va catturato PRIMA di validare il form
+        status_form = TicketStatusForm(instance=ticket)
+    reply_form = TicketReplyForm()
+    feedback_form = TicketFeedbackForm()
+
+    if request.method == 'POST':
+        action = request.POST.get('action', '').strip()
+
+        # 1. Invio Valutazione / Feedback (1-5 stelle) da parte del cliente
+        if action == 'submit_feedback' or 'rating' in request.POST:
+            if ticket.created_by == request.user and ticket.status in ['resolved', 'closed']:
+                feedback_form = TicketFeedbackForm(request.POST)
+                if feedback_form.is_valid():
+                    ticket.rating = int(feedback_form.cleaned_data['rating'])
+                    ticket.rating_comment = feedback_form.cleaned_data.get('rating_comment', '').strip()
+                    ticket.rated_at = timezone.now()
+                    ticket.save()
+                    messages.success(request, 'Grazie! La tua valutazione a 5 stelle è stata registrata con successo.')
+                    return redirect('ticket_detail', ticket_id=ticket.id)
+                else:
+                    messages.error(request, 'Seleziona una valutazione da 1 a 5 stelle prima di inviare.')
+            else:
+                messages.error(request, 'Non è possibile rilasciare un feedback per questo ticket.')
+
+        # 2. Invio Replica / Messaggio con eventuale allegato
+        elif action == 'reply':
+            reply_form = TicketReplyForm(request.POST, request.FILES)
+            if reply_form.is_valid():
+                update = reply_form.save(commit=False)
+                update.ticket = ticket
+                update.author = request.user
+                update.save()
+
+                ticket.last_activity_at = timezone.now()
+
+                if not request.user.is_staff:
+                    # Se il cliente risponde a un ticket risolto/chiuso, lo riapriamo
+                    if ticket.status in ['resolved', 'closed']:
+                        ticket.status = 'in_progress'
+                    ticket.save()
+                    emails.notifica_risposta_cliente(ticket, update)
+                    messages.success(request, 'Il tuo messaggio e gli allegati sono stati inviati allo staff!')
+                else:
+                    ticket.save()
+                    emails.aggiornamento_stato_ticket_cliente(ticket, ticket.status, update.note)
+                    messages.success(request, 'Risposta inviata ed email recapitata al cliente con successo!')
+
+                return redirect('ticket_detail', ticket_id=ticket.id)
+            else:
+                messages.error(request, 'Impossibile inviare la risposta. Controlla il messaggio e l\'allegato.')
+
+        # 3. Gestione Stato da parte dello Staff
+        elif request.user.is_staff and ('status' in request.POST or 'assigned_to' in request.POST or action in ['save_only', 'save_and_notify']):
+            stato_precedente = ticket.status
             status_form = TicketStatusForm(request.POST, instance=ticket)
             if status_form.is_valid():
                 updated_ticket = status_form.save(commit=False)
                 stato_cambiato = updated_ticket.status != stato_precedente
 
-                # Prima volta che viene assegnato a qualcuno -> genera il codice di richiamo
                 if updated_ticket.assigned_to and not updated_ticket.codice_riferimento:
-                    updated_ticket.save()  # serve l'id se il ticket non l'aveva ancora
+                    updated_ticket.save()
                     updated_ticket.genera_codice_riferimento()
 
                 updated_ticket.last_activity_at = timezone.now()
@@ -196,28 +325,53 @@ def ticket_detail(request, ticket_id):
                 if note_text:
                     TicketUpdate.objects.create(ticket=updated_ticket, author=request.user, note=note_text)
 
-                if stato_cambiato or note_text:
-                    if updated_ticket.status == 'closed':
+                send_to_customer = (action == 'save_and_notify')
+
+                if send_to_customer and (stato_cambiato or note_text):
+                    if updated_ticket.status == 'closed' and stato_cambiato:
                         emails.chiusura_ticket_cliente(updated_ticket, note_text or None)
                     else:
                         emails.aggiornamento_stato_ticket_cliente(updated_ticket, stato_precedente, note_text or None)
+                    messages.success(request, f'Ticket #{ticket.id} salvato ed email inviata al cliente!')
+                else:
+                    messages.success(request, f'Ticket #{ticket.id} aggiornato con successo (modifica interna).')
 
-                messages.success(request, 'Ticket aggiornato con successo.')
                 return redirect('ticket_detail', ticket_id=ticket.id)
             else:
                 messages.error(request, 'Impossibile aggiornare il ticket, controlla i campi.')
-        else:
-            status_form = TicketStatusForm(instance=ticket)
 
-    updates = ticket.updates.all()
+        # 4. Chiusura del Ticket da parte del Cliente in qualsiasi momento
+        elif action == 'close_by_customer':
+            if ticket.created_by == request.user and ticket.status != 'closed':
+                ticket.status = 'closed'
+                ticket.last_activity_at = timezone.now()
+                ticket.save()
+
+                close_reason = request.POST.get('close_reason', '').strip()
+                note_text = "Ticket chiuso direttamente dal richiedente."
+                if close_reason:
+                    note_text += f" Motivazione: {close_reason}"
+
+                TicketUpdate.objects.create(
+                    ticket=ticket,
+                    author=request.user,
+                    note=note_text
+                )
+                emails.chiusura_ticket_cliente(ticket, nota=note_text)
+                messages.success(request, 'Ticket chiuso con successo! Se desideri, puoi lasciare una valutazione del servizio qui sotto.')
+                return redirect('ticket_detail', ticket_id=ticket.id)
+            else:
+                messages.error(request, 'Questo ticket è già chiuso o non hai i permessi per chiuderlo.')
+
+    updates = ticket.updates.select_related('author').all()
 
     return render(request, 'tickets/ticket_detail.html', {
         'ticket': ticket,
         'status_form': status_form,
+        'reply_form': reply_form,
+        'feedback_form': feedback_form,
         'updates': updates,
     })
 
-
 def privacy_policy(request):
-    """Visualizza la pagina informativa della Privacy Policy."""
     return render(request, 'privacy_policy.html')

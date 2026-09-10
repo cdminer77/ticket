@@ -1,25 +1,56 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="it" class="h-full bg-slate-50">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Afterbit - Ticket #{{ ticket.id }}</title>
+    <title>Afterbit - Dettaglio Ticket #{{ ticket.id }}</title>
+    <link rel="icon" type="image/jpeg" href="{% static 'tickets/images/icon.jpg' %}">
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Poppins', 'Inter', sans-serif; }
+        .brand-navy { background-color: #1C244B; }
+        .brand-text-navy { color: #1C244B; }
+        .brand-orange { background-color: #EC3C11; }
+        .brand-orange:hover { background-color: #d63209; }
+        .brand-text-orange { color: #EC3C11; }
+        .brand-border-orange { border-color: #EC3C11; }
+        .brand-slate { color: #324A6D; }
+        .star-rating svg {
+            transition: transform 0.15s ease, fill 0.15s ease;
+        }
+        .star-rating svg:hover {
+            transform: scale(1.15);
+        }
+    </style>
 </head>
-<body class="min-h-full flex flex-col">
+<body class="min-h-full flex flex-col bg-[#F3F5F8] text-slate-800">
 
-    <header class="bg-white border-b border-slate-200">
-        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between h-16 items-center">
-            <span class="text-xl font-black text-slate-900">AFTERBIT<span class="text-blue-600">.</span></span>
-            <a href="{% url 'dashboard' %}" class="text-sm font-medium text-slate-600 hover:text-slate-900">← Torna alla Dashboard</a>
+    <!-- Header / Navbar -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
+        <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between h-20 items-center">
+            <a href="{% url 'dashboard' %}" class="flex items-center">
+                <img src="{% static 'tickets/images/logo.png' %}" alt="Afterbit Logo" class="h-10 w-auto object-contain">
+            </a>
+            <div class="flex items-center space-x-3">
+                <a href="{% url 'faq' %}" class="text-slate-600 hover:text-[#EC3C11] font-medium text-xs bg-slate-50 hover:bg-slate-100 px-3.5 py-2 rounded-lg transition border border-slate-200 flex items-center gap-1.5">
+                    <span>💡</span> FAQ
+                </a>
+                <a href="{% url 'dashboard' %}" class="text-xs font-semibold text-[#1C244B] hover:text-[#EC3C11] bg-slate-100 hover:bg-slate-200 px-3.5 py-2 rounded-lg border border-slate-200 transition">
+                    ← Torna alla Dashboard
+                </a>
+            </div>
         </div>
     </header>
 
-    <main class="flex-1 max-w-4xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <main class="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
         {% if messages %}
             {% for message in messages %}
-                <div class="mb-6 p-4 rounded-lg text-sm border
+                <div class="mb-6 p-4 rounded-xl text-sm border shadow-sm
                     {% if message.tags == 'error' %} bg-red-50 text-red-700 border-red-200
                     {% else %} bg-emerald-50 text-emerald-800 border-emerald-200 {% endif %}">
                     {{ message }}
@@ -27,116 +58,430 @@
             {% endfor %}
         {% endif %}
 
-        <div class="bg-white border border-slate-200 rounded-xl p-6 sm:p-8 shadow-sm space-y-6">
-            <div>
-                <p class="text-sm text-slate-400 font-mono">#{{ ticket.id }}</p>
-                <h1 class="text-2xl font-bold text-slate-900">{{ ticket.title }}</h1>
-                <p class="text-xs text-slate-400 mt-1">
-                    Aperto da {{ ticket.created_by.username }} il {{ ticket.created_at|date:"d/m/Y H:i" }}
-                </p>
-            </div>
-
-            <div>
-                <h2 class="text-sm font-semibold text-slate-700 mb-1">Descrizione</h2>
-                <p class="text-sm text-slate-600 whitespace-pre-line">{{ ticket.description }}</p>
-            </div>
-
-            {% if ticket.attachment %}
+        <div class="bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 shadow-sm space-y-6">
+            <!-- Header Ticket Info -->
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-100 pb-5">
                 <div>
-                    <h2 class="text-sm font-semibold text-slate-700 mb-1">Allegato</h2>
-                    <a href="{{ ticket.attachment.url }}" class="text-sm text-blue-600 hover:text-blue-800 underline">
-                        Scarica allegato
-                    </a>
-                </div>
-            {% endif %}
-
-            <div class="flex gap-6 text-sm border-t border-slate-100 pt-4 flex-wrap">
-                <div>
-                    <p class="text-slate-400">Referente</p>
-                    <p class="font-medium text-slate-800">{{ ticket.referente }}</p>
-                </div>
-                <div>
-                    <p class="text-slate-400">Tipo intervento</p>
-                    <p class="font-medium text-slate-800">{{ ticket.get_tipo_intervento_display }}</p>
-                </div>
-                <div>
-                    <p class="text-slate-400">Priorità</p>
-                    <p class="font-medium text-slate-800">{{ ticket.get_priority_display }}</p>
-                </div>
-                <div>
-                    <p class="text-slate-400">Stato</p>
-                    <p class="font-medium text-slate-800">{{ ticket.get_status_display }}</p>
-                </div>
-                {% if ticket.assigned_to %}
-                    <div>
-                        <p class="text-slate-400">Assegnato a</p>
-                        <p class="font-medium text-slate-800">{{ ticket.assigned_to.username }}</p>
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs font-mono font-bold text-[#EC3C11] bg-orange-50 px-2.5 py-1 rounded-md border border-orange-200">
+                            {{ ticket.codice_riferimento|default:ticket.id }}
+                        </span>
+                        {% if ticket.rating %}
+                            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                                <span>⭐</span> Valutazione: {{ ticket.rating }}/5
+                            </span>
+                        {% endif %}
                     </div>
-                {% endif %}
-                {% if ticket.codice_riferimento %}
-                    <div>
-                        <p class="text-slate-400">Codice di richiamo</p>
-                        <p class="font-mono font-medium text-slate-800">{{ ticket.codice_riferimento }}</p>
-                    </div>
-                {% endif %}
-                {% if request.user.is_staff %}
-                    {% if ticket.created_from_ip %}
-                        <div>
-                            <p class="text-slate-400">IP di creazione</p>
-                            <p class="font-mono font-medium text-slate-800">{{ ticket.created_from_ip }}</p>
-                        </div>
-                    {% endif %}
-                    {% if ticket.created_from_location %}
-                        <div>
-                            <p class="text-slate-400">Localizzazione IP</p>
-                            <p class="font-medium text-slate-800">{{ ticket.created_from_location }}</p>
-                        </div>
-                    {% endif %}
-                {% endif %}
-            </div>
+                    <h1 class="text-2xl font-extrabold text-[#1C244B] mt-2">{{ ticket.title }}</h1>
+                    <p class="text-xs text-[#324A6D] mt-1">
+                        Aperto da <strong>{{ ticket.referente|default:ticket.created_by.username }}</strong> ({{ ticket.created_by.email|default:ticket.created_by.username }}) il {{ ticket.created_at|date:"d/m/Y H:i" }}
+                        {% if request.user.is_staff and ticket.created_from_location %}&bull; Posizione: {{ ticket.created_from_location }}{% endif %}
+                    </p>
+                </div>
+                <div class="flex flex-wrap items-center gap-2">
+                    <span class="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold rounded-full 
+                        {% if ticket.status == 'open' %} bg-blue-50 text-blue-700 border border-blue-200
+                        {% elif ticket.status == 'in_progress' %} bg-amber-50 text-amber-700 border border-amber-200
+                        {% elif ticket.status == 'resolved' %} bg-emerald-50 text-emerald-700 border border-emerald-200
+                        {% else %} bg-slate-100 text-slate-600 border border-slate-200 {% endif %}">
+                        <span class="w-2 h-2 rounded-full 
+                            {% if ticket.status == 'open' %} bg-blue-500
+                            {% elif ticket.status == 'in_progress' %} bg-amber-500
+                            {% elif ticket.status == 'resolved' %} bg-emerald-500
+                            {% else %} bg-slate-400 {% endif %}"></span>
+                        {{ ticket.get_status_display }}
+                    </span>
 
-            {% if status_form %}
-                <div class="border-t border-slate-100 pt-6">
-                    <h2 class="text-sm font-semibold text-slate-700 mb-3">Gestione ticket (staff)</h2>
-                    <form method="POST" class="space-y-4">
-                        {% csrf_token %}
-                        <div>
-                            <label for="{{ status_form.status.id_for_label }}" class="block text-sm font-medium text-slate-700 mb-1">Stato</label>
-                            {{ status_form.status }}
-                        </div>
-                        <div>
-                            <label for="{{ status_form.assigned_to.id_for_label }}" class="block text-sm font-medium text-slate-700 mb-1">Assegnato a</label>
-                            {{ status_form.assigned_to }}
-                        </div>
-                        <div>
-                            <label for="id_note" class="block text-sm font-medium text-slate-700 mb-1">Nota di aggiornamento / chiusura (opzionale)</label>
-                            <textarea id="id_note" name="note" rows="3" class="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600 sm:text-sm" placeholder="Inserisci una nota di aggiornamento sui lavori..."></textarea>
-                        </div>
-                        <button type="submit" class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-sm font-semibold text-white shadow">
-                            Aggiorna Ticket
+                    {% if request.user == ticket.created_by and ticket.status != 'closed' %}
+                        <button type="button" onclick="openCloseModal()" class="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-700 bg-white hover:bg-red-50 hover:text-red-700 hover:border-red-200 px-3 py-1.5 rounded-lg border border-slate-300 transition shadow-2xs" title="Chiudi questo ticket se il problema è risolto">
+                            <span>🔒</span> Chiudi Ticket
                         </button>
-                    </form>
+                    {% endif %}
                 </div>
+            </div>
+
+            <!-- Meta attributes grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs bg-[#F8FAFC] p-4 rounded-xl border border-slate-200">
+                <div>
+                    <span class="text-slate-400 block font-medium">Categoria</span>
+                    <span class="font-bold text-[#EC3C11]">{{ ticket.categoria|default:"Sito Web" }}</span>
+                </div>
+                <div>
+                    <span class="text-slate-400 block font-medium">Tipo Intervento</span>
+                    <span class="font-bold text-[#1C244B]">{{ ticket.get_tipo_intervento_display }}</span>
+                </div>
+                <div>
+                    <span class="text-slate-400 block font-medium">Assegnato a</span>
+                    <span class="font-bold text-slate-800">{{ ticket.assigned_to.username|default:"Non assegnato" }}</span>
+                </div>
+            </div>
+
+            <!-- SEZIONE FEEDBACK / VALUTAZIONE A 5 STELLE -->
+            {% if ticket.status in 'resolved,closed' %}
+                {% if ticket.rating %}
+                    <!-- Feedback già rilasciato -->
+                    <div class="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-xl p-5 space-y-2">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <span class="text-lg">⭐</span>
+                                <h3 class="text-sm font-bold text-slate-900">Valutazione Servizio: {{ ticket.rating }} su 5 Stelle</h3>
+                            </div>
+                            {% if ticket.rated_at %}
+                                <span class="text-xs text-slate-500">Rilasciata il {{ ticket.rated_at|date:"d/m/Y H:i" }}</span>
+                            {% endif %}
+                        </div>
+                        <div class="flex items-center gap-1 text-amber-500 text-lg">
+                            {% for i in "12345" %}
+                                {% if forloop.counter <= ticket.rating %}
+                                    <span>★</span>
+                                {% else %}
+                                    <span class="text-slate-300">☆</span>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                        {% if ticket.rating_comment %}
+                            <p class="text-xs text-slate-700 bg-white/80 p-3 rounded-lg border border-amber-100 italic">"{{ ticket.rating_comment }}"</p>
+                        {% endif %}
+                        <p class="text-[11px] text-slate-500">Grazie per il tuo feedback! Ci aiuta a migliorare costantemente la qualità della nostra assistenza.</p>
+                    </div>
+                {% elif request.user == ticket.created_by %}
+                    <!-- Modulo per richiedere il feedback al cliente -->
+                    <div class="bg-gradient-to-r from-amber-50/80 to-blue-50/60 border-2 border-amber-200/80 rounded-2xl p-5 sm:p-6 space-y-4">
+                        <div class="flex items-start gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center text-xl shrink-0">
+                                🌟
+                            </div>
+                            <div>
+                                <h3 class="text-sm sm:text-base font-bold text-[#1C244B]">Come valuti il nostro supporto?</h3>
+                                <p class="text-xs text-slate-600 mt-0.5">Il tuo ticket è stato contrassegnato come {{ ticket.get_status_display|lower }}. Aiutaci a migliorare lasciando un voto da 1 a 5 stelle.</p>
+                            </div>
+                        </div>
+
+                        <form method="POST" class="space-y-3">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="submit_feedback">
+                            <input type="hidden" id="selected_rating" name="rating" value="5">
+
+                            <!-- Interactive Star Selection -->
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1.5">Seleziona le stelle:</label>
+                                <div class="flex items-center gap-1 star-rating cursor-pointer select-none" id="star-container">
+                                    {% for val in "12345" %}
+                                        <button type="button" data-value="{{ val }}" class="star-btn p-1 text-2xl sm:text-3xl text-amber-400 hover:text-amber-500 focus:outline-none transition" title="{{ val }} stelle">
+                                            ★
+                                        </button>
+                                    {% endfor %}
+                                    <span id="rating-text-label" class="ml-3 text-xs font-semibold text-amber-700 bg-amber-100/80 px-2.5 py-1 rounded-md">
+                                        5 - Eccellente!
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label for="id_rating_comment" class="block text-xs font-bold text-slate-700 mb-1">Commento o suggerimento (opzionale):</label>
+                                <textarea id="id_rating_comment" name="rating_comment" rows="2" class="w-full rounded-xl border border-slate-300 p-3 text-xs text-slate-800 shadow-xs focus:border-[#EC3C11] focus:outline-none focus:ring-2 focus:ring-[#EC3C11]" placeholder="Cosa ti è piaciuto o come possiamo migliorare?"></textarea>
+                            </div>
+
+                            <div class="flex justify-end">
+                                <button type="submit" class="px-5 py-2.5 rounded-xl brand-orange text-xs font-bold text-white shadow hover:shadow-md transition flex items-center gap-1.5">
+                                    <span>⭐</span> Invia Valutazione
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                {% endif %}
             {% endif %}
 
-            {% if updates %}
-                <div class="border-t border-slate-100 pt-6">
-                    <h2 class="text-sm font-semibold text-slate-800 mb-4">Cronologia aggiornamenti intervento</h2>
+            <!-- Messaggio Iniziale Segnalato -->
+            <div>
+                <div class="flex items-center justify-between mb-2">
+                    <h2 class="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                        <span>📝</span> Descrizione Iniziale della Segnalazione
+                    </h2>
+                    <span class="text-[11px] text-slate-400">{{ ticket.created_at|date:"d/m/Y H:i" }}</span>
+                </div>
+                <div class="bg-slate-50 p-4 sm:p-5 rounded-xl text-xs sm:text-sm text-slate-800 leading-relaxed whitespace-pre-line border border-slate-200">
+                    {{ ticket.description }}
+                </div>
+                {% if ticket.attachment %}
+                    <div class="mt-2.5">
+                        <a href="{{ ticket.attachment.url }}" target="_blank" class="inline-flex items-center gap-2 text-xs font-semibold text-[#1C244B] bg-orange-50 hover:bg-orange-100 px-3.5 py-2 rounded-xl border border-orange-200 transition">
+                            📎 Scarica allegato iniziale
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- CRONOLOGIA RISPOSTE & REPLICHE (TIMELINE) -->
+            <div class="border-t border-slate-100 pt-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-sm font-bold text-[#1C244B] flex items-center gap-2">
+                        <span>💬</span> Conversazione & Note di Lavorazione ({{ updates|length }})
+                    </h2>
+                    <span class="text-xs text-slate-400">Tutte le risposte e i file scambiati</span>
+                </div>
+                
+                {% if updates %}
                     <div class="space-y-4">
-                        {% for update in updates %}
-                            <div class="bg-slate-50 border border-slate-200 rounded-lg p-4 text-sm">
-                                <div class="flex justify-between items-center text-slate-500 mb-2">
-                                    <span class="font-semibold text-slate-700">{{ update.author.username }} (Staff)</span>
-                                    <span class="text-xs text-slate-400">{{ update.created_at|date:"d/m/Y H:i" }}</span>
+                        {% for upd in updates %}
+                            <div class="rounded-xl border p-4 sm:p-5 transition shadow-2xs
+                                {% if upd.author.is_staff %}
+                                    bg-[#F8FAFC] border-slate-200 border-l-4 border-l-[#1C244B]
+                                {% else %}
+                                    bg-white border-slate-200 border-l-4 border-l-[#EC3C11]
+                                {% endif %}">
+                                <div class="flex flex-wrap justify-between items-center gap-2 text-xs mb-2">
+                                    <div class="flex items-center gap-2">
+                                        {% if upd.author.is_staff %}
+                                            <span class="inline-flex items-center gap-1 bg-[#1C244B] text-white px-2 py-0.5 rounded text-[10px] font-bold">
+                                                🛠️ Supporto Tecnico Afterbit
+                                            </span>
+                                            <span class="font-semibold text-slate-800">{{ upd.author.username }}</span>
+                                        {% else %}
+                                            <span class="inline-flex items-center gap-1 bg-orange-100 text-[#EC3C11] px-2 py-0.5 rounded text-[10px] font-bold">
+                                                👤 Cliente / Richiedente
+                                            </span>
+                                            <span class="font-semibold text-slate-800">{{ upd.author.username }}</span>
+                                        {% endif %}
+                                    </div>
+                                    <span class="text-slate-400 text-[11px]">{{ upd.created_at|date:"d/m/Y H:i" }}</span>
                                 </div>
-                                <p class="text-slate-600 whitespace-pre-line">{{ update.note }}</p>
+
+                                <p class="text-xs sm:text-sm text-slate-800 whitespace-pre-line leading-relaxed">{{ upd.note }}</p>
+
+                                {% if upd.attachment %}
+                                    <div class="mt-3 pt-3 border-t border-slate-200/60">
+                                        <a href="{{ upd.attachment.url }}" target="_blank" class="inline-flex items-center gap-1.5 text-xs font-semibold text-[#EC3C11] hover:text-[#d63209] bg-white px-3 py-1.5 rounded-lg border border-orange-200 hover:border-orange-300 transition shadow-2xs">
+                                            📎 Scarica allegato
+                                        </a>
+                                    </div>
+                                {% endif %}
                             </div>
                         {% endfor %}
                     </div>
+                {% else %}
+                    <div class="bg-slate-50 border border-dashed border-slate-300 rounded-xl p-6 text-center text-xs text-slate-400">
+                        Nessun messaggio o replica presente. Puoi inviare un messaggio o nuovi allegati tramite il modulo sottostante.
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- MODULO PER RISPONDERE / INVIARE REPLICA E NUOVO ALLEGATO -->
+            <div class="border-t border-slate-200 pt-6">
+                <div class="bg-[#F8FAFC] border border-slate-200 rounded-2xl p-5 sm:p-6 space-y-4">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-sm font-bold text-[#1C244B] flex items-center gap-2">
+                            <span>✍️</span> Rispondi a questo Ticket / Invia Nuovo Allegato
+                        </h3>
+                        <span class="text-[11px] text-slate-400">Senza necessità di aprire un nuovo ticket</span>
+                    </div>
+
+                    <form method="POST" enctype="multipart/form-data" class="space-y-4">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="reply">
+
+                        <div>
+                            <label for="{{ reply_form.note.id_for_label }}" class="block text-xs font-bold text-slate-700 mb-1">
+                                Il tuo messaggio / Risposta *
+                            </label>
+                            {{ reply_form.note }}
+                            {% if reply_form.note.errors %}<p class="text-xs text-red-600 mt-1">{{ reply_form.note.errors.0 }}</p>{% endif %}
+                        </div>
+
+                        <div>
+                            <label for="{{ reply_form.attachment.id_for_label }}" class="block text-xs font-bold text-slate-700 mb-1">
+                                Aggiungi Nuovo Allegato (Screenshot, log, documenti - Max 10MB)
+                            </label>
+                            {{ reply_form.attachment }}
+                            {% if reply_form.attachment.errors %}<p class="text-xs text-red-600 mt-1">{{ reply_form.attachment.errors.0 }}</p>{% endif %}
+                        </div>
+
+                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pt-2">
+                            <p class="text-[11px] text-slate-500 italic">
+                                {% if request.user.is_staff %}
+                                    L'invio notificherà il cliente via email e aggiornerà la conversazione.
+                                {% else %}
+                                    L'invio aggiornerà la pratica e notificherà tempestivamente lo staff tecnico.
+                                {% endif %}
+                            </p>
+                            <button type="submit" class="w-full sm:w-auto px-6 py-2.5 rounded-xl brand-orange text-xs font-bold text-white shadow hover:shadow-md transition flex items-center justify-center gap-2">
+                                <span>📤</span> Invia Messaggio
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Staff Management Form -->
+            {% if status_form %}
+                <div class="border-t border-slate-200 pt-6 bg-slate-50/90 -mx-6 -mb-6 p-6 rounded-b-2xl border-t-2">
+                    <h2 class="text-sm font-bold text-[#1C244B] mb-3 flex items-center gap-2">
+                        <span>⚙️</span> Pannello di Gestione Staff Helpdesk (Stato & Assegnazione)
+                    </h2>
+                    <form method="POST" class="space-y-4">
+                        {% csrf_token %}
+                        
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div>
+                                <label for="{{ status_form.status.id_for_label }}" class="block text-xs font-bold text-slate-700 mb-1">Modifica Stato</label>
+                                {{ status_form.status }}
+                            </div>
+                            <div>
+                                <label for="{{ status_form.assigned_to.id_for_label }}" class="block text-xs font-bold text-slate-700 mb-1">Assegna a Tecnico</label>
+                                {{ status_form.assigned_to }}
+                            </div>
+                            <div>
+                                <label for="{{ status_form.categoria.id_for_label }}" class="block text-xs font-bold text-slate-700 mb-1">Modifica Categoria</label>
+                                {{ status_form.categoria }}
+                            </div>
+                        </div>
+
+                        <div>
+                            <label for="id_note_staff" class="block text-xs font-bold text-slate-700 mb-1">Aggiungi Nota di Lavorazione Rapida (opzionale)</label>
+                            <textarea id="id_note_staff" name="note" rows="2" class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-slate-800 shadow-sm focus:border-[#EC3C11] focus:outline-none focus:ring-2 focus:ring-[#EC3C11] text-xs" placeholder="Descrivi le azioni intraprese, diagnostica o risoluzione del problema..."></textarea>
+                        </div>
+
+                        <div class="flex flex-col-reverse sm:flex-row justify-end items-center gap-3 pt-2">
+                            <!-- Opzione 1: Salva solo internamente senza inviare email al cliente -->
+                            <button type="submit" name="action" value="save_only" class="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 text-xs font-semibold shadow-xs transition flex items-center justify-center gap-1.5" title="Salva lo stato e le note senza inviare email al cliente">
+                                <span>💾</span> Salva Modifiche (Senza Invio Email)
+                            </button>
+
+                            <!-- Opzione 2: Salva ed invia la notifica email al cliente -->
+                            <button type="submit" name="action" value="save_and_notify" class="w-full sm:w-auto px-6 py-2.5 rounded-xl brand-orange text-xs font-bold text-white shadow hover:shadow-md transition flex items-center justify-center gap-2" title="Salva e notifica il cliente via email">
+                                <span>✉️</span> Salva & Invia al Cliente
+                            </button>
+                        </div>
+
+                        {% if ticket.created_from_ip %}
+                            <div class="text-[11px] text-slate-500 pt-3 border-t border-slate-200/80 flex items-center gap-2">
+                                <span>📡</span>
+                                <span>IP di creazione: <strong class="text-slate-700 font-mono">{{ ticket.created_from_ip }}</strong></span>
+                                {% if ticket.created_from_location %}
+                                    <span class="text-slate-300">&bull;</span>
+                                    <span>Posizione: <strong class="text-slate-700">{{ ticket.created_from_location }}</strong></span>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                    </form>
                 </div>
             {% endif %}
         </div>
+        <!-- Modal Chiusura Ticket da parte del Cliente -->
+        {% if request.user == ticket.created_by and ticket.status != 'closed' %}
+            <div id="close-ticket-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+                <div class="bg-white border border-slate-200 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-150">
+                    <div class="flex items-start gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-red-100 text-red-600 flex items-center justify-center text-xl shrink-0">
+                            🔒
+                        </div>
+                        <div>
+                            <h3 class="text-base font-bold text-[#1C244B]">Chiudi Ticket di Assistenza</h3>
+                            <p class="text-xs text-slate-600 mt-1">Confermi di voler chiudere questa richiesta? Se il problema è stato risolto o non necessiti di ulteriore supporto, puoi procedere alla chiusura.</p>
+                        </div>
+                    </div>
+
+                    <form method="POST" class="space-y-3 pt-1">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="close_by_customer">
+
+                        <div>
+                            <label for="close_reason" class="block text-xs font-bold text-slate-700 mb-1">Motivazione o nota (opzionale):</label>
+                            <input type="text" id="close_reason" name="close_reason" placeholder="Es. Risolto in autonomia, problema rientrato..." class="w-full rounded-xl border border-slate-300 p-2.5 text-xs text-slate-800 focus:border-[#EC3C11] focus:outline-none focus:ring-2 focus:ring-[#EC3C11]">
+                        </div>
+
+                        <div class="flex justify-end items-center gap-2 pt-2 border-t border-slate-100">
+                            <button type="button" onclick="closeCloseModal()" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-100 border border-slate-300 transition">
+                                Annulla
+                            </button>
+                            <button type="submit" class="px-5 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-xs font-bold text-white shadow transition">
+                                Conferma Chiusura Ticket
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        {% endif %}
     </main>
 
+    <!-- Interactive JS for 5-Star Rating Widget & Close Modal -->
+    <script>
+        function openCloseModal() {
+            const modal = document.getElementById('close-ticket-modal');
+            if (modal) modal.classList.remove('hidden');
+        }
+
+        function closeCloseModal() {
+            const modal = document.getElementById('close-ticket-modal');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const starContainer = document.getElementById('star-container');
+            const ratingInput = document.getElementById('selected_rating');
+            const ratingLabel = document.getElementById('rating-text-label');
+
+            if (starContainer && ratingInput && ratingLabel) {
+                const stars = Array.from(starContainer.querySelectorAll('.star-btn'));
+                const labels = {
+                    1: '1 - Insoddisfatto',
+                    2: '2 - Scarso',
+                    3: '3 - Sufficiente',
+                    4: '4 - Buono',
+                    5: '5 - Eccellente!'
+                };
+
+                function updateStars(val) {
+                    stars.forEach(s => {
+                        const starVal = parseInt(s.dataset.value, 10);
+                        if (starVal <= val) {
+                            s.classList.remove('text-slate-300');
+                            s.classList.add('text-amber-400');
+                        } else {
+                            s.classList.remove('text-amber-400');
+                            s.classList.add('text-slate-300');
+                        }
+                    });
+                    ratingLabel.textContent = labels[val] || (val + ' Stelle');
+                }
+
+                stars.forEach(s => {
+                    s.addEventListener('mouseenter', function() {
+                        const hoverVal = parseInt(this.dataset.value, 10);
+                        updateStars(hoverVal);
+                    });
+
+                    s.addEventListener('click', function() {
+                        const clickedVal = parseInt(this.dataset.value, 10);
+                        ratingInput.value = clickedVal;
+                        updateStars(clickedVal);
+                    });
+                });
+
+                starContainer.addEventListener('mouseleave', function() {
+                    const currentVal = parseInt(ratingInput.value, 10) || 5;
+                    updateStars(currentVal);
+                });
+
+                // Init with current value
+                updateStars(parseInt(ratingInput.value, 10) || 5);
+            }
+        });
+    </script>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-slate-200 mt-12 py-6">
+        <div class="max-w-5xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
+            <div class="flex items-center space-x-2">
+                <img src="{% static 'tickets/images/logo.png' %}" alt="Afterbit" class="h-6 w-auto object-contain">
+                <span>&copy; 2026 Afterbit S.r.l.</span>
+            </div>
+            <div class="flex items-center space-x-4">
+                <a href="{% url 'faq' %}" class="hover:text-slate-800 transition">FAQ</a>
+                <a href="{% url 'privacy_policy' %}" class="hover:text-slate-800 transition underline">Privacy Policy</a>
+                <a href="https://www.afterbit.it" target="_blank" class="hover:text-slate-800 transition">Afterbit.it ↗</a>
+            </div>
+        </div>
+    </footer>
 </body>
 </html>

@@ -1,4 +1,5 @@
-from django.contrib import admin
+# pyright: reportMissingModuleSource=false
+from django.contrib import admin  # type: ignore[import-not-found]
 from .models import Ticket, UserProfile, TicketUpdate
 
 
