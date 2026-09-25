@@ -50,8 +50,9 @@ CATEGORIA_CHOICES = [
     ('SQL Server', 'SQL Server'),
     ('Statistiche', 'Statistiche'),
     ('Trasferimento domini', 'Trasferimento domini'),
-    ('Trust', 'Trust'),
     ('Sito Web', 'Sito Web'),
+    ('Hardware', 'Hardware'),
+    ('Software', 'Software'),   
 ]
 
 class Ticket(models.Model):
@@ -159,3 +160,78 @@ class TicketUpdate(models.Model):
 
     def __str__(self):
         return f"Nota su #{self.ticket.id} da {self.author.username}"
+
+
+class TicketReadStatus(models.Model):
+    ticket = models.ForeignKey(Ticket, on_delete=models.CASCADE, related_name='read_statuses')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='ticket_read_statuses')
+    last_read_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        unique_together = ('ticket', 'user')
+        verbose_name = "Stato Lettura Ticket"
+        verbose_name_plural = "Stati Lettura Ticket"
+
+    def __str__(self):
+        return f"{self.user.username} - Ticket #{self.ticket_id} letto il {self.last_read_at}"
+
+
+ALLOWED_RECORDING_EXTENSIONS = ['mp3', 'wav', 'm4a', 'ogg', 'webm', 'mp4', 'mov', 'mkv']
+MAX_RECORDING_SIZE_MB = 1000  # 1 GB per call/video lunghi fino a 1 ora
+
+def validate_recording_size(file):
+    limit_bytes = MAX_RECORDING_SIZE_MB * 1024 * 1024
+    if file.size > limit_bytes:
+        raise ValidationError(
+            f"Il file supera la dimensione massima consentita di {MAX_RECORDING_SIZE_MB} MB."
+        )
+
+
+class TicketRecording(models.Model):
+    """
+    Registrazioni audio/video di sessioni e call con clienti ad uso ESCLUSIVO interno dello staff.
+    I clienti non hanno accesso a questo modello né alla sua visualizzazione/gestione.
+    """
+    MEDIA_TYPE_CHOICES = [
+        ('audio', 'Audio Call / Vocale'),
+        ('video', 'Video / Registrazione Schermo'),
+    ]
+
+    STATUS_CHOICES = [
+        ('pending', 'In attesa di trascrizione'),
+        ('processing', 'Trascrizione in corso...'),
+        ('completed', 'Completato'),
+        ('failed', 'Errore elaborazione'),
+    ]
+
+    ticket = models.ForeignKey(Ticket, on_delete=models.CASCADE, related_name='recordings')
+    author = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Operatore staff")
+    title = models.CharField(max_length=200, blank=True, default="", verbose_name="Titolo / Oggetto call")
+    media_type = models.CharField(max_length=10, choices=MEDIA_TYPE_CHOICES, default='audio', verbose_name="Tipo file")
+    recording_file = models.FileField(
+        upload_to='ticket_staff_recordings/%Y/%m/',
+        verbose_name="File Registrazione",
+        validators=[
+            FileExtensionValidator(allowed_extensions=ALLOWED_RECORDING_EXTENSIONS),
+            validate_recording_size,
+        ]
+    )
+    duration_seconds = models.PositiveIntegerField(null=True, blank=True, verbose_name="Durata in secondi")
+
+    # Dati generati dal motore locale (faster-whisper e OCR)
+    transcript = models.TextField(blank=True, default="", verbose_name="Trascrizione integrale")
+    extracted_notes = models.TextField(blank=True, default="", verbose_name="Dati e note estratte (OCR / Punti chiave)")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending', verbose_name="Stato trascrizione")
+    error_message = models.TextField(blank=True, default="", verbose_name="Eventuale errore")
+
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Data registrazione")
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = "Registrazione Interna Ticket"
+        verbose_name_plural = "Registrazioni Interne Ticket"
+
+    def __str__(self):
+        return f"[{self.get_media_type_display()}] #{self.ticket.id} - {self.title or self.created_at.strftime('%d/%m/%Y %H:%M')}"
+

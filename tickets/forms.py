@@ -201,3 +201,42 @@ class CustomerRegistrationForm(UserCreationForm):
             phone = self.cleaned_data.get('phone', '')
             UserProfile.objects.create(user=user, phone=phone)
         return user
+
+
+class TicketRecordingUploadForm(forms.ModelForm):
+    """
+    Form ad uso ESCLUSIVO dello staff per caricare o registrare audio/video legati al ticket.
+    """
+    media_blob_base64 = forms.CharField(required=False, widget=forms.HiddenInput())
+    audio_blob_base64 = forms.CharField(required=False, widget=forms.HiddenInput())
+
+    class Meta:
+        from .models import TicketRecording
+        model = TicketRecording
+        fields = ['title', 'media_type', 'recording_file']
+        widgets = {
+            'title': forms.TextInput(attrs={
+                'class': 'block w-full rounded-xl border border-slate-300 p-2.5 text-slate-800 shadow-xs focus:border-[#EC3C11] focus:outline-none focus:ring-2 focus:ring-[#EC3C11] text-xs',
+                'placeholder': 'Es. Chiamata tecnica con referente / Registrazione condivisione schermo'
+            }),
+            'media_type': forms.Select(attrs={
+                'class': 'block w-full rounded-xl border border-slate-300 p-2.5 text-slate-800 shadow-xs focus:border-[#EC3C11] focus:outline-none focus:ring-2 focus:ring-[#EC3C11] text-xs'
+            }),
+            'recording_file': forms.ClearableFileInput(attrs={
+                'class': 'block w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-3.5 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer border border-slate-200 rounded-xl bg-white p-1'
+            })
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Il file da input non è obbligatorio se è stata fatta la registrazione vocale/video live
+        self.fields['recording_file'].required = False
+
+    def clean(self):
+        cleaned_data = super().clean()
+        file_obj = cleaned_data.get('recording_file')
+        base64_data = cleaned_data.get('media_blob_base64') or cleaned_data.get('audio_blob_base64')
+        if not file_obj and not base64_data:
+            raise forms.ValidationError("Registra dal vivo (audio o schermo) oppure seleziona un file da caricare.")
+        return cleaned_data
+

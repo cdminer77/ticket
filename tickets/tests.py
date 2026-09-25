@@ -839,4 +839,88 @@ class TicketSystemTests(TestCase):
         self.assertIn('Risolto riavviando il router', update.note)
         self.assertEqual(update.author, self.user)
 
+    def test_outlook_style_read_unread_status_in_dashboard(self):
+        # 1. Customer creates ticket
+        self.client.login(username='mario.rossi', password='PasswordSicura123!')
+        self.client.post(reverse('create_ticket'), {
+            'tipo_intervento': 'assistenza_tecnica',
+            'title': 'Nuova segnalazione da gestire',
+            'referente': 'Mario Rossi',
+            'categoria': 'Sito Web',
+            'description': 'Problema con il certificato SSL',
+        })
+        ticket = Ticket.objects.get(title='Nuova segnalazione da gestire')
+
+        # 2. Staff logs in and views dashboard: ticket MUST be unread (is_unread = True)
+        self.client.login(username='staff.helpdesk', password='PasswordSicura123!')
+        dash_response = self.client.get(reverse('dashboard'))
+        self.assertEqual(dash_response.status_code, 200)
+        self.assertContains(dash_response, 'Da gestire / Non letto')
+        self.assertContains(dash_response, 'Nuova segnalazione da gestire')
+
+        # 3. Staff opens ticket detail but does NOT assign or reply yet: ticket STAYS bold in dashboard
+        detail_response = self.client.get(reverse('ticket_detail', args=[ticket.id]))
+        self.assertEqual(detail_response.status_code, 200)
+
+        dash_response_after_view = self.client.get(reverse('dashboard'))
+        self.assertEqual(dash_response_after_view.status_code, 200)
+        # Ticket is STILL da gestire / bold because unassigned and no staff reply
+        self.assertContains(dash_response_after_view, 'title="Da gestire / Non letto"')
+
+        # 4. Staff assigns ticket to technician and sends a reply / note
+        self.client.post(reverse('ticket_detail', args=[ticket.id]), {
+            'action': 'save_and_notify',
+            'status': 'in_progress',
+            'assigned_to': self.staff_user.id,
+            'categoria': 'Sito Web',
+            'note': 'Preso in carico dal supporto tecnico Afterbit.',
+        })
+
+        # 5. Staff refreshes dashboard: ticket is now managed (is_unread = False, normal font)
+        dash_response2 = self.client.get(reverse('dashboard'))
+        self.assertEqual(dash_response2.status_code, 200)
+        self.assertNotContains(dash_response2, 'title="Da gestire / Non letto"')
+
+        # 6. Customer posts a reply
+        self.client.login(username='mario.rossi', password='PasswordSicura123!')
+        self.client.post(reverse('ticket_detail', args=[ticket.id]), {
+            'action': 'reply',
+            'note': 'Ho aggiunto ulteriori dettagli sul problema.',
+        })
+
+        # 7. Staff views dashboard again: ticket becomes unread (is_unread = True) again
+        self.client.login(username='staff.helpdesk', password='PasswordSicura123!')
+        dash_response3 = self.client.get(reverse('dashboard'))
+        self.assertContains(dash_response3, 'title="Da gestire / Non letto"')
+
+    def test_staff_view_has_unified_management_and_response_panel(self):
+        ticket = Ticket.objects.create(
+            title='Ticket per verifica layout staff',
+            description='Test layout',
+            created_by=self.user,
+            status='open'
+        )
+        self.client.login(username='staff.helpdesk', password='PasswordSicura123!')
+        response = self.client.get(reverse('ticket_detail', args=[ticket.id]))
+        self.assertEqual(response.status_code, 200)
+
+        self.assertContains(response, 'Pannello di Gestione Staff Helpdesk (Stato, Assegnazione & Risposta)')
+        self.assertContains(response, 'Salva Modifiche (Senza Invio Email)')
+        self.assertContains(response, 'Salva & Invia al Cliente')
+
+    def test_customer_view_has_close_ticket_button_next_to_send_message(self):
+        ticket = Ticket.objects.create(
+            title='Ticket con tasto chiudi in basso',
+            description='Test pulsante',
+            created_by=self.user,
+            status='open'
+        )
+        self.client.login(username='mario.rossi', password='PasswordSicura123!')
+        response = self.client.get(reverse('ticket_detail', args=[ticket.id]))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Chiudi Ticket')
+        self.assertContains(response, 'Invia Messaggio')
+        self.assertContains(response, 'openCloseModal()')
+
+
 

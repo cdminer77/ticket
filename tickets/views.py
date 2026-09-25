@@ -7,10 +7,10 @@ from django.contrib import messages
 from django.core.paginator import Paginator
 from django.utils import timezone
 from django.db.models import Q, Count
-from .models import Ticket, TicketUpdate, CATEGORIA_CHOICES
+from .models import Ticket, TicketUpdate, CATEGORIA_CHOICES, TicketReadStatus, TicketRecording
 from .forms import (
     TicketForm, TicketStatusForm, CustomerRegistrationForm,
-    TicketReplyForm, TicketFeedbackForm
+    TicketReplyForm, TicketFeedbackForm, TicketRecordingUploadForm
 )
 from . import emails
 from . import utils
@@ -199,6 +199,57 @@ def dashboard(request):
     page_number = request.GET.get('page')
     tickets = paginator.get_page(page_number)
 
+    # Calcolo stato di lettura stile Outlook (richieste da gestire) per i ticket della pagina corrente
+    page_ticket_ids = [t.id for t in tickets.object_list]
+    read_map = {
+        rs.ticket_id: rs.last_read_at
+        for rs in TicketReadStatus.objects.filter(user=request.user, ticket_id__in=page_ticket_ids)
+    }
+
+    latest_updates = {}
+    for upd in TicketUpdate.objects.filter(ticket_id__in=page_ticket_ids).select_related('author').order_by('created_at'):
+        latest_updates[upd.ticket_id] = upd
+
+    for t in tickets.object_list:
+        latest_upd = latest_updates.get(t.id)
+        if latest_upd:
+            latest_time = latest_upd.created_at
+            latest_author = latest_upd.author
+        else:
+            latest_time = t.last_activity_at or t.created_at
+            latest_author = t.created_by
+
+        if request.user.is_staff:
+            # Lato Staff: i ticket da gestire (prima di essere assegnati o di ricevere risposta)
+            # devono rimanere in grassetto (meglio visibili tipo outlook).
+            if t.status in ['resolved', 'closed']:
+                # Se risolto/chiuso, è da gestire solo se il cliente ha inviato una nuova replica dopo la chiusura
+                if latest_author and not latest_author.is_staff:
+                    t.is_unread = True
+                else:
+                    t.is_unread = False
+            else:
+                # Ticket aperti o in lavorazione:
+                # Rimane in grassetto se non è ancora assegnato, se è in stato 'open',
+                # o se l'ultimo messaggio è del cliente (in attesa di risposta dello staff)
+                if not t.assigned_to or t.status == 'open':
+                    t.is_unread = True
+                elif not latest_author or not latest_author.is_staff:
+                    t.is_unread = True
+                else:
+                    # Assegnato, in lavorazione e con ultima risposta dello staff
+                    t.is_unread = False
+        else:
+            # Lato Cliente: in grassetto se c'è una risposta/aggiornamento dello staff non ancora letto
+            if latest_author and latest_author.is_staff:
+                last_read = read_map.get(t.id)
+                if not last_read or last_read < latest_time:
+                    t.is_unread = True
+                else:
+                    t.is_unread = False
+            else:
+                t.is_unread = False
+
     return render(request, 'tickets/dashboard.html', {
         'tickets': tickets,
         'q': q,
@@ -229,10 +280,17 @@ def create_ticket(request):
             client_ip = utils.get_client_ip(request)
             ticket.created_from_ip = client_ip
             ticket.created_from_location = utils.get_ip_location(client_ip)
+            ticket.last_activity_at = timezone.now()
 
             ticket.save()
             ticket.genera_codice_riferimento()
             ticket.save()
+
+            TicketReadStatus.objects.update_or_create(
+                ticket=ticket,
+                user=request.user,
+                defaults={'last_read_at': timezone.now()}
+            )
 
             emails.notifica_nuovo_ticket_staff(ticket)
             emails.ricevuta_apertura_ticket_cliente(ticket)
@@ -253,6 +311,13 @@ def ticket_detail(request, ticket_id):
         ticket = get_object_or_404(Ticket, id=ticket_id)
     else:
         ticket = get_object_or_404(Ticket, id=ticket_id, created_by=request.user)
+
+    # Segna il ticket come visualizzato dall'utente corrente
+    TicketReadStatus.objects.update_or_create(
+        ticket=ticket,
+        user=request.user,
+        defaults={'last_read_at': timezone.now()}
+    )
 
     status_form = None
     if request.user.is_staff:
@@ -306,7 +371,7 @@ def ticket_detail(request, ticket_id):
             else:
                 messages.error(request, 'Impossibile inviare la risposta. Controlla il messaggio e l\'allegato.')
 
-        # 3. Gestione Stato da parte dello Staff
+        # 3. Gestione Stato e Risposta da parte dello Staff
         elif request.user.is_staff and ('status' in request.POST or 'assigned_to' in request.POST or action in ['save_only', 'save_and_notify']):
             stato_precedente = ticket.status
             status_form = TicketStatusForm(request.POST, instance=ticket)
@@ -322,12 +387,18 @@ def ticket_detail(request, ticket_id):
                 updated_ticket.save()
 
                 note_text = request.POST.get('note', '').strip()
-                if note_text:
-                    TicketUpdate.objects.create(ticket=updated_ticket, author=request.user, note=note_text)
+                attachment_file = request.FILES.get('attachment')
+                if note_text or attachment_file:
+                    TicketUpdate.objects.create(
+                        ticket=updated_ticket,
+                        author=request.user,
+                        note=note_text or "Aggiornamento pratiche e lavorazione ticket.",
+                        attachment=attachment_file
+                    )
 
                 send_to_customer = (action == 'save_and_notify')
 
-                if send_to_customer and (stato_cambiato or note_text):
+                if send_to_customer and (stato_cambiato or note_text or attachment_file):
                     if updated_ticket.status == 'closed' and stato_cambiato:
                         emails.chiusura_ticket_cliente(updated_ticket, note_text or None)
                     else:
@@ -363,7 +434,58 @@ def ticket_detail(request, ticket_id):
             else:
                 messages.error(request, 'Questo ticket è già chiuso o non hai i permessi per chiuderlo.')
 
+        # 5. Caricamento / Salvataggio Registrazione Audio/Video (USO ESCLUSIVO STAFF)
+        elif action == 'upload_recording' and request.user.is_staff:
+            recording_form = TicketRecordingUploadForm(request.POST, request.FILES)
+            if recording_form.is_valid():
+                rec = recording_form.save(commit=False)
+                rec.ticket = ticket
+                rec.author = request.user
+                rec.status = 'pending'
+
+                # Se non c'è un file allegato da input ma c'è la registrazione live (audio o video) in base64
+                base64_data = recording_form.cleaned_data.get('media_blob_base64') or recording_form.cleaned_data.get('audio_blob_base64')
+                if not rec.recording_file and base64_data:
+                    import base64
+                    from django.core.files.base import ContentFile
+                    if ';base64,' in base64_data:
+                        header, imgstr = base64_data.split(';base64,')
+                        if 'video' in header:
+                            rec.media_type = 'video'
+                    else:
+                        imgstr = base64_data
+
+                    file_bytes = base64.b64decode(imgstr)
+                    prefix = 'registrazione_video' if rec.media_type == 'video' else 'registrazione_vocale'
+                    filename = f"{prefix}_{int(timezone.now().timestamp())}.webm"
+                    rec.recording_file.save(filename, ContentFile(file_bytes), save=False)
+
+                rec.save()
+
+                # Accoda la trascrizione automatica locale in background
+                try:
+                    from .service_transcription import queue_recording_transcription
+                    queue_recording_transcription(rec.id)
+                except Exception as e:
+                    pass
+
+                messages.success(request, f'Registrazione interna "{rec.title or rec.get_media_type_display()}" allegata! Elaborazione locale avviata.')
+                return redirect('ticket_detail', ticket_id=ticket.id)
+            else:
+                error_msg = 'Errore nel caricamento della registrazione.'
+                if recording_form.errors:
+                    first_err = next(iter(recording_form.errors.values()))[0]
+                    error_msg += f" {first_err}"
+                messages.error(request, error_msg)
+
     updates = ticket.updates.select_related('author').all()
+
+    # Le registrazioni interne sono caricate SOLO se l'utente è staff
+    staff_recordings = []
+    recording_form = None
+    if request.user.is_staff:
+        staff_recordings = ticket.recordings.select_related('author').all()
+        recording_form = TicketRecordingUploadForm()
 
     return render(request, 'tickets/ticket_detail.html', {
         'ticket': ticket,
@@ -371,6 +493,8 @@ def ticket_detail(request, ticket_id):
         'reply_form': reply_form,
         'feedback_form': feedback_form,
         'updates': updates,
+        'staff_recordings': staff_recordings,
+        'recording_form': recording_form,
     })
 
 def privacy_policy(request):

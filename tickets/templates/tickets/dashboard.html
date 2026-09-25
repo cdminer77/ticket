@@ -247,16 +247,27 @@
                     </thead>
                     <tbody class="divide-y divide-slate-100 text-slate-700 bg-white">
                         {% for ticket in tickets %}
-                            <tr class="hover:bg-slate-50/90 transition items-center">
+                            <tr class="hover:bg-slate-50/90 transition items-center {% if ticket.is_unread %}bg-orange-50/30 border-l-4 border-l-[#EC3C11]{% else %}bg-white border-l-4 border-l-transparent{% endif %}">
                                 <!-- 1. ID -->
-                                <td class="px-3.5 py-3.5 font-mono font-bold text-slate-700 text-xs whitespace-nowrap">
-                                    <span class="bg-slate-100 px-2 py-0.5 rounded border border-slate-200">{{ ticket.codice_riferimento|default:ticket.id }}</span>
+                                <td class="px-3.5 py-3.5 font-mono text-xs whitespace-nowrap">
+                                    {% if ticket.is_unread %}
+                                        <span class="bg-orange-100 text-[#EC3C11] px-2 py-0.5 rounded border border-orange-200 font-bold">{{ ticket.codice_riferimento|default:ticket.id }}</span>
+                                    {% else %}
+                                        <span class="bg-slate-100 text-slate-600 px-2 py-0.5 rounded border border-slate-200 font-medium">{{ ticket.codice_riferimento|default:ticket.id }}</span>
+                                    {% endif %}
                                 </td>
 
                                 <!-- 2. Oggetto -->
-                                <td class="px-3.5 py-3.5 font-semibold text-slate-900 min-w-[240px] max-w-md">
-                                    <a href="{% url 'ticket_detail' ticket.id %}" class="hover:text-[#EC3C11] transition block line-clamp-2" title="{{ ticket.title }}">
-                                        {{ ticket.title }}
+                                <td class="px-3.5 py-3.5 min-w-[240px] max-w-md">
+                                    <a href="{% url 'ticket_detail' ticket.id %}" class="hover:text-[#EC3C11] transition block line-clamp-2 {% if ticket.is_unread %}font-bold text-[#1C244B]{% else %}font-normal text-slate-700{% endif %}" title="{{ ticket.title }}">
+                                        {% if ticket.is_unread %}
+                                            <span class="inline-flex items-center gap-1">
+                                                <span class="inline-block w-2 h-2 rounded-full bg-[#EC3C11] shrink-0" title="Da gestire / Non letto"></span>
+                                                <span>{{ ticket.title }}</span>
+                                            </span>
+                                        {% else %}
+                                            {{ ticket.title }}
+                                        {% endif %}
                                     </a>
                                 </td>
 
@@ -269,7 +280,7 @@
 
                                 <!-- 4. Utente -->
                                 <td class="px-3.5 py-3.5 min-w-[180px] max-w-[260px]">
-                                    <div class="font-medium text-slate-900 truncate" title="{{ ticket.referente|default:ticket.created_by.username }}">
+                                    <div class="truncate {% if ticket.is_unread %}font-bold text-slate-900{% else %}font-medium text-slate-700{% endif %}" title="{{ ticket.referente|default:ticket.created_by.username }}">
                                         {{ ticket.referente|default:ticket.created_by.username }}
                                     </div>
                                     <div class="text-[10px] text-slate-400 truncate">
@@ -281,7 +292,7 @@
                                 </td>
 
                                 <!-- 5. Apertura -->
-                                <td class="px-3.5 py-3.5 whitespace-nowrap text-slate-500 font-medium">
+                                <td class="px-3.5 py-3.5 whitespace-nowrap text-xs {% if ticket.is_unread %}font-bold text-slate-800{% else %}font-medium text-slate-500{% endif %}">
                                     {{ ticket.created_at|date:"d/m/Y H:i" }}
                                 </td>
 
@@ -315,8 +326,8 @@
 
                                 <!-- Action -->
                                 <td class="px-3.5 py-3.5 whitespace-nowrap text-right">
-                                    <a href="{% url 'ticket_detail' ticket.id %}" class="bg-white hover:bg-[#1C244B] hover:text-white text-slate-700 font-semibold px-3 py-1.5 rounded-lg text-xs transition border border-slate-300 shadow-xs inline-block">
-                                        Gestisci →
+                                    <a href="{% url 'ticket_detail' ticket.id %}" class="{% if ticket.is_unread %}brand-orange text-white font-bold hover:shadow-md{% else %}bg-white hover:bg-[#1C244B] hover:text-white text-slate-700 font-semibold border border-slate-300{% endif %} px-3 py-1.5 rounded-lg text-xs transition shadow-xs inline-block">
+                                        {% if ticket.is_unread %}Gestisci →{% else %}Apri →{% endif %}
                                     </a>
                                 </td>
                             </tr>

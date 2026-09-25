@@ -1,5 +1,5 @@
 # Afterbit Ticket — Descrizione dello Stack Tecnologico
-**Documento tecnico di riferimento — Versione 2.1 (Settembre 2026)**
+**Documento tecnico di riferimento — Versione 2.2 (Settembre 2026)**
 
 ---
 
@@ -9,10 +9,13 @@
 Consente ai clienti di:
 - Aprire ticket categorizzati per area tecnica (hosting, posta elettronica, PEC, DNS, database, server, sicurezza web) con riconoscimento automatico del profilo utente connesso.
 - Comunicare in modo bidirezionale con lo staff tramite un thread continuo di risposte e **invio di nuovi allegati** per ciascun messaggio senza dover aprire ulteriori ticket.
-- Chiudere autonomamente i propri ticket in qualsiasi momento con rilascio facoltativo della motivazione.
+- Chiudere autonomamente i propri ticket in qualsiasi momento tramite il pulsante dedicato posizionato in basso accanto al tasto di invio.
 - Rilasciare una **valutazione di gradimento a 5 stelle** con eventuale commento al termine della lavorazione.
 
-Consente allo staff di supporto interno di gestire l'intero ciclo di vita delle richieste (assegnazione a tecnici, lavorazione, note interne o condivise, tracciamento SLA, consultazione feedback e notifiche email asincrone).
+Consente allo staff di supporto interno di:
+- Monitorare le richieste nella **Dashboard con evidenziazione stile Outlook** (i ticket con nuove richieste o risposte da gestire sono evidenziati in grassetto con indicatore visivo e tornano a carattere normale non appena aperti o gestiti).
+- Gestire prioritariamente stato, assegnazione tecnico e note di lavorazione grazie al **pannello operatore posizionato in evidenza** sopra il modulo di risposta.
+- Tracciare SLA, consultare il rating a stelle e inviare notifiche email asincrone differenziate (salvataggio interno vs notifica cliente).
 
 L'applicazione è strutturata con rendering lato server ad alte prestazioni (Django Templates + Tailwind CSS), integrata con file statici serviti da WhiteNoise e backend database MySQL in produzione (con supporto SQLite per lo sviluppo locale).
 
@@ -37,23 +40,26 @@ L'applicazione è strutturata con rendering lato server ad alte prestazioni (Dja
 - **Ambiente Locale / Sviluppo**: SQLite (`db.sqlite3`), attivato automaticamente su Windows o con flag `USE_SQLITE=1`.
 - **Ambiente di Produzione**: MySQL 8+ su host dedicato (`148.251.75.142:3306`), database `afterbit-test100` con codifica `utf8mb4` e strict transaction mode.
 - **Modelli di Dominio Principali**:
-  - `Ticket`: entità centrale con campi `status`, `priority`, `categoria`, `specific_category`, `reference_code`, `rating` (1-5), `rating_comment`, `rated_at`, `closed_at`.
-  - `TicketUpdate`: messaggi del thread di conversazione con supporto per mittente (staff/cliente), nota testuale e `attachment` (`FileField` protetto).
-  - `UserProfile`: estensione del modello `User` con numero di telefono, azienda e preferenze.
-- **Migrazioni**: 7 migrazioni attive e sincronizzate (inclusa la migrazione `0007_ticket_rated_at_ticket_rating_ticket_rating_comment_and_more`).
+  - `Ticket`: entità centrale con campi `status`, `priority`, `categoria`, `servizio`, `referente`, `codice_riferimento`, `rating` (1-5), `rating_comment`, `rated_at`, `last_activity_at`.
+  - `TicketUpdate`: messaggi del thread di conversazione con supporto per autore (staff/cliente), nota testuale e `attachment` (`FileField` protetto con validazione estensione e limite 10MB).
+  - `TicketReadStatus`: tracciamento di lettura e apertura del ticket per singolo utente (`ticket`, `user`, `last_read_at`).
+  - `UserProfile`: estensione del modello `User` con numero di telefono e dati aziendali.
+- **Migrazioni**: 8 migrazioni attive e sincronizzate (inclusa la migrazione `0008_alter_ticket_categoria_ticketreadstatus`).
 
 ---
 
 ### 2.3 Frontend & Interfaccia Utente
 - **Architettura UI**: Server-Side Rendering (SSR) tramite Django Template Engine.
 - **Design System**: Tailwind CSS con palette istituzionale Afterbit (Navy `#1C244B`, Orange `#EC3C11`, Slate `#324A6D`, Background `#F3F5F8`).
-- **Interattività Client**:
-  - **Thread di Conversazione**: timeline stile chat/supporto con badge distintivi per cliente e staff tecnico.
+- **Funzionalità & Componenti UI**:
+  - **Dashboard Stile Outlook**: evidenziazione dinamica in grassetto (`font-bold text-[#1C244B]`) e indicatore circolare arancione `●` per le richieste da gestire/non lette, con disattivazione automatica dopo l'apertura.
+  - **Layout Scheda Ticket Ottimizzato per Staff**: il pannello di gestione stato, assegnazione operatore e note rapide è posizionato prioritariamente prima della risposta.
+  - **Doppio Pulsante Azione Cliente**: posizionamento affiancato in basso dei pulsanti `[ 🔒 Chiudi Ticket ]` e `[ 📤 Invia Messaggio ]`.
+  - **Thread di Conversazione**: timeline stile chat con badge distintivi per cliente e supporto tecnico.
   - **Widget Feedback a 5 Stelle**: componente interattivo a stelle con hover visivo, preselezione immediata e campo commenti.
-  - **Identità Utente Visibile**: card di riepilogo account e precompilazione automatica del referente nel modulo di apertura ticket.
-  - **Combobox Categoria Specifica**: filtro in tempo reale istantaneo alla digitazione della prima lettera e navigazione tastiera (<kbd>↓</kbd>/<kbd>↑</kbd>/<kbd>Enter</kbd>).
+  - **Combobox Categoria Specifica**: ricerca istantanea alla digitazione della prima lettera e navigazione tastiera (<kbd>↓</kbd>/<kbd>↑</kbd>/<kbd>Enter</kbd>).
   - **Ordinamento Dinamico**: sorting interattivo delle colonne della Dashboard tramite parametri sanitizzati.
-  - **Modal di Chiusura Rapida**: finestra di conferma per la chiusura autonoma da parte del cliente.
+  - **Modal di Chiusura Rapida**: finestra modale per la conferma di chiusura autonoma con motivazione facoltativa.
 
 ---
 
@@ -96,7 +102,7 @@ L'applicazione è strutturata con rendering lato server ad alte prestazioni (Dja
   - Reverse proxy ottimizzato (`index.php`) con supporto completo per richieste HTTP `multipart/form-data` (upload file via `CURLFile`) e inoltro a Gunicorn (`127.0.0.1:8000`).
   - Supporto per **Phusion Passenger** tramite [`passenger_wsgi.py`](file:///c:/Users/Utente/.gemini/antigravity/scratch/afterbit_ticket/passenger_wsgi.py).
 - **Storage Allegati**: memorizzazione su filesystem in `media/ticket_attachments/` con validazione estensioni e limite di 10 MB per file.
-- **Testing**: Suite di 52 test automatizzati (`tickets/tests.py`) a copertura di modelli, viste, form e permessi.
+- **Testing**: Suite di 55 test automatizzati (`tickets/tests.py`) a copertura di modelli, viste, form, lettura ticket e permessi.
 
 ---
 
@@ -110,17 +116,18 @@ afterbit_ticket/
 │   ├── wsgi.py               # WSGI entry point standard
 │   └── asgi.py               # ASGI entry point
 ├── tickets/                  # Applicazione Helpdesk
-│   ├── models.py             # Modelli Ticket, UserProfile, TicketUpdate
-│   ├── views.py              # Logica dashboard, thread risposte, feedback e chiusura
+│   ├── models.py             # Modelli Ticket, UserProfile, TicketUpdate, TicketReadStatus
+│   ├── views.py              # Logica dashboard, thread risposte, feedback, lettura e chiusura
 │   ├── forms.py              # Form creazione, risposte con allegati, feedback 5 stelle
 │   ├── emails.py             # Dispatcher email asincrono (apertura, risposta, chiusura)
 │   ├── utils.py              # Geolocalizzazione IP, CAPTCHA, permessi
-│   ├── tests.py              # Suite di 52 test automatizzati
+│   ├── tests.py              # Suite di 55 test automatizzati
 │   ├── admin.py              # Configurazione del pannello Django Admin
 │   ├── templates/            # Template HTML (Dashboard, Dettaglio Ticket, FAQ, Auth)
-│   └── migrations/           # Storico schema database (7 migrazioni sincronizzate)
+│   └── migrations/           # Storico schema database (8 migrazioni sincronizzate)
 ├── static/                   # File statici compilati per la produzione
 ├── media/                    # Cartella protetta di upload allegati ticket
+├── files/                    # Documenti PDF (Stack Tecnologico e Manuale Operatore)
 ├── passenger_wsgi.py         # Entry point per cPanel / CloudLinux Passenger
 ├── requirements.txt          # Dipendenze Python di produzione
 ├── Manuale_Operatore_Ticket.md # Manuale operativo per lo staff

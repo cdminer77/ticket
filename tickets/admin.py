@@ -1,6 +1,6 @@
 # pyright: reportMissingModuleSource=false
 from django.contrib import admin  # type: ignore[import-not-found]
-from .models import Ticket, UserProfile, TicketUpdate
+from .models import Ticket, UserProfile, TicketUpdate, TicketReadStatus, TicketRecording
 
 
 class TicketUpdateInline(admin.TabularInline):
@@ -28,3 +28,19 @@ class TicketUpdateAdmin(admin.ModelAdmin):
     list_display = ['id', 'ticket', 'author', 'created_at']
     list_filter = ['created_at']
     search_fields = ['note']
+
+
+@admin.register(TicketReadStatus)
+class TicketReadStatusAdmin(admin.ModelAdmin):
+    list_display = ['id', 'ticket', 'user', 'last_read_at']
+    list_filter = ['last_read_at']
+    search_fields = ['ticket__id', 'ticket__title', 'user__username']
+
+
+@admin.register(TicketRecording)
+class TicketRecordingAdmin(admin.ModelAdmin):
+    list_display = ['id', 'ticket', 'media_type', 'title', 'author', 'status', 'created_at']
+    list_filter = ['media_type', 'status', 'created_at']
+    search_fields = ['ticket__id', 'ticket__title', 'title', 'transcript', 'extracted_notes']
+    readonly_fields = ['created_at', 'updated_at']
+
