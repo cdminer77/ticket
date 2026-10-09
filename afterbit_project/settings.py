@@ -204,4 +204,3 @@ SUPPORT_NOTIFICATION_EMAIL = 'info@afterbit.com'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
-

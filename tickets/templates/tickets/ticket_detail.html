@@ -468,18 +468,28 @@
                                     <span id="record-status-msg" class="text-[11px] text-slate-400">Seleziona la modalità e premi Avvia per registrare direttamente dal browser.</span>
                                 </div>
 
-                                <!-- PROMEMORIA VISIVO CONSENSO PRIVACY GDPR -->
-                                <div id="privacy-consent-reminder" class="hidden mt-3 p-3 rounded-xl bg-amber-950/40 border border-amber-500/40 text-amber-200 text-[11px] space-y-1.5">
-                                    <div class="flex items-center gap-1.5 font-bold text-amber-300">
-                                        <span>⚖️</span>
-                                        <span>PROMEMORIA OPERATORE &bull; Formula di Consenso Privacy (GDPR):</span>
+                                <!-- PROMEMORIA VISIVO CONSENSO PRIVACY GDPR (BEN VISIBILE) -->
+                                <div id="privacy-consent-reminder" class="hidden mt-4 p-4 sm:p-5 rounded-2xl bg-amber-950/60 border-2 border-amber-400 text-amber-100 shadow-lg space-y-3">
+                                    <div class="flex items-center justify-between border-b border-amber-500/30 pb-2.5">
+                                        <div class="flex items-center gap-2">
+                                            <span class="text-xl">⚖️</span>
+                                            <span class="font-extrabold text-amber-300 text-sm sm:text-base tracking-wide uppercase">
+                                                Formula Obbligatoria Consenso GDPR da Pronunciare
+                                            </span>
+                                        </div>
+                                        <span class="text-[11px] font-bold bg-amber-400 text-amber-950 px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+                                            Leggi al cliente
+                                        </span>
                                     </div>
-                                    <p class="italic text-amber-100 bg-black/40 p-2.5 rounded-lg border border-amber-900/60 leading-relaxed font-sans select-all">
-                                        "La informo che questa conversazione è soggetta a registrazione per scopi di miglioramento del servizio e gestione della richiesta tecnica. Continuando la conversazione, esprime il consenso al trattamento dei dati secondo la nostra informativa privacy. Acconsente a procedere?"
-                                    </p>
-                                    <p class="text-[10px] text-amber-400/80">
-                                        💡 <em>Attendi la risposta affermativa del cliente prima di procedere: la prova vocale del consenso rimarrà registrata e trascritta nei primi secondi.</em>
-                                    </p>
+                                    <div class="bg-black/60 p-4 sm:p-5 rounded-xl border border-amber-400/40 shadow-inner">
+                                        <p class="text-amber-50 text-base sm:text-lg md:text-xl font-semibold leading-relaxed font-sans select-all tracking-wide">
+                                            “La informo che questa conversazione è soggetta a registrazione per scopi di miglioramento del servizio e gestione della richiesta tecnica. Continuando la conversazione, esprime il consenso al trattamento dei dati secondo la nostra informativa privacy. <span class="text-amber-300 underline underline-offset-4 decoration-amber-400 font-bold">Acconsente a procedere?</span>”
+                                        </p>
+                                    </div>
+                                    <div class="flex items-center gap-2 text-xs text-amber-300/90 font-medium pt-0.5">
+                                        <span>💡</span>
+                                        <span>Attendi la conferma verbale del cliente: la risposta affermativa verrà registrata e trascritta automaticamente nei primi secondi.</span>
+                                    </div>
                                 </div>
 
                                 <div id="live-audio-preview" class="hidden pt-2 space-y-2">

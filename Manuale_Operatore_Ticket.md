@@ -1,5 +1,5 @@
 # Afterbit Ticket — Manuale Operatore
-**Guida all'uso della piattaforma per lo staff di assistenza — Versione 2.2 (Settembre 2026)**
+**Guida all'uso della piattaforma per lo staff di assistenza — Versione 2.3 (Ottobre 2026)**
 
 ---
 
@@ -97,7 +97,61 @@ Nel modulo di risposta del cliente sono presenti due pulsanti affiancati in bass
 
 ---
 
-## 6. Sistema di Valutazione e Feedback a 5 Stelle
+## 6. Registrazioni Audio/Video Interne & Trascrizione Vocale AI (Esclusivo Staff)
+La piattaforma include un modulo interno per acquisire, archiviare e analizzare registrazioni di chiamate telefoniche di assistenza tecnica o sessioni di teleassistenza a schermo condiviso.
+
+> [!IMPORTANT]
+> **Riservatezza Assoluta**: le registrazioni audio/video, le trascrizioni e le note OCR sono a **uso rigorosamente interno dello staff**. I clienti non hanno visibilità di questa sezione, non possono scaricare i media né consultare le relative trascrizioni.
+
+### 6.1 Modalità di Acquisizione Media
+Nella scheda del ticket (sezione riservata *Registrazioni Interne Staff*), l'operatore ha a disposizione due canali:
+1. **Registrazione Live dal Browser (HTML5 MediaRecorder)**:
+   - **Audio Microfono**: per registrare direttamente telefonate o note vocali dell'operatore con indicatore waveform live e durata in tempo reale.
+   - **Video / Condivisione Schermo**: per registrare la sessione di supporto da remoto (scheda del browser, finestra dell'applicazione o intero schermo del cliente).
+2. **Upload di File Esistente**: caricamento di file multimediali fino a 1 GB nei formati audio/video standard (`.mp3`, `.wav`, `.m4a`, `.ogg`, `.webm`, `.mp4`, `.mov`, `.mkv`).
+
+### 6.2 Formula Obbligatoria Consenso Privacy (GDPR)
+Per conformità alla normativa europea sulla protezione dei dati (Regolamento UE 2016/679 - GDPR), all'attivazione della registrazione compare in evidenza un riquadro speciale dorato ad alto contrasto con la dicitura da pronunciare:
+
+> **⚖️ FORMULA OBBLIGATORIA CONSENSO GDPR DA PRONUNCIARE AL CLIENTE:**
+>
+> *“La informo che questa conversazione è soggetta a registrazione per scopi di miglioramento del servizio e gestione della richiesta tecnica. Continuando la conversazione, esprime il consenso al trattamento dei dati secondo la nostra informativa privacy. Acconsente a procedere?”*
+
+- **Regola Operativa**: l'operatore deve attendere la risposta affermativa chiara dell'interlocutore prima di iniziare la trattazione del problema.
+- **Valore Probatorio**: il consenso verbale espresso viene registrato e trascritto automaticamente nei primissimi secondi del file, costituendo tracciatura conforme a tutela dell'azienda e del cliente.
+
+### 6.3 Motore di Trascrizione Vocale Locale (faster-whisper)
+Appena salvata la registrazione, il sistema avvia in background l'elaborazione locale:
+- **Zero Invio a Cloud Esterni**: la trascrizione viene eseguita interamente sul server locale Afterbit tramite la libreria ad altissima efficienza `faster-whisper` (CTranslate2). Nessun dato audio né conversazione viene trasmessa a provider terzi esterni.
+- **Supporto Hardware Ibrido**: ottimizzazione con quantizzazione `int8` su CPU e accelerazione `float16` su GPU NVIDIA con CUDA.
+- **Trascrizione Temporizzata con VAD**: il testo viene generato con blocchi temporali precisi (`[MM:SS - MM:SS]`) e filtro VAD (*Voice Activity Detection*) per la soppressione automatica dei silenzi e delle pause.
+- **Cache in Memoria**: il modello neurale viene mantenuto in memoria per evitare ricaricamenti da disco a ogni sessione, garantendo avvii immediati.
+
+### 6.4 Analisi OCR Automatica dei Fotogrammi Video
+In caso di registrazioni video o schermate condivise:
+- Il motore estrae automaticamente fotogrammi salienti ad intervalli regolari (1 fotogramma ogni 45 secondi) tramite **FFmpeg**.
+- I fotogrammi vengono analizzati tramite motore OCR (**Tesseract**) per identificare automaticamente:
+  - **Errori di sistema e avvisi critici** (*Exception*, *Fatal error*, *Error 500/404*, *Timeout*, *Access Denied*, *Stack trace*).
+  - **Indirizzi IP e porte rilevati a schermo**.
+  - **URL e domini web** coinvolti nel problema.
+- Il report OCR viene allegato direttamente alla scheda della registrazione per velocizzare la diagnosi tecnica dello staff.
+
+### 6.5 Gestione da Linea di Comando (CLI Management Command)
+Per elaborazioni massive o recupero di file in errore/interrotti, gli amministratori di sistema possono eseguire via terminale:
+```bash
+# Elabora tutte le registrazioni in attesa
+python manage.py transcribe_recordings
+
+# Elabora una registrazione specifica per ID
+python manage.py transcribe_recordings --id 12
+
+# Ritenta anche le registrazioni con stato 'failed'
+python manage.py transcribe_recordings --retry-failed
+```
+
+---
+
+## 7. Sistema di Valutazione e Feedback a 5 Stelle
 Quando un ticket viene marcato come *Risolto* o *Chiuso*:
 1. Nella pagina del ticket compare il widget interattivo di gradimento con **5 stelle animate**.
 2. Il cliente può selezionare il proprio voto (da 1 a 5) e facoltativamente lasciare una recensione/commento.
@@ -106,7 +160,7 @@ Quando un ticket viene marcato come *Risolto* o *Chiuso*:
 
 ---
 
-## 7. Sistema di Notifiche Email Automatiche
+## 8. Sistema di Notifiche Email Automatiche
 Le comunicazioni email viaggiano tramite il server SMTP dedicato di Afterbit (`smtp.afterbit.it`) in modalità asincrona non bloccante:
 
 | Evento | Destinatario | Contenuto |
@@ -119,7 +173,7 @@ Le comunicazioni email viaggiano tramite il server SMTP dedicato di Afterbit (`s
 
 ---
 
-## 8. Parametri Ufficiali di Configurazione Email (Riferimento Rapido FAQ 7)
+## 9. Parametri Ufficiali di Configurazione Email (Riferimento Rapido FAQ 7)
 In caso di supporto a clienti che necessitano di configurare client di posta (Outlook, Thunderbird, Apple Mail, Smartphone):
 
 - **IMAP (Posta in Arrivo):** `mail.afterbit.it` — Porta SSL: `993` | Porta No SSL: `143`
@@ -129,15 +183,15 @@ In caso di supporto a clienti che necessitano di configurare client di posta (Ou
 
 ---
 
-## 9. Verifica e Ricerca Pubblica Ticket
+## 10. Verifica e Ricerca Pubblica Ticket
 Per i clienti che desiderano verificare l'avanzamento della propria richiesta senza effettuare il login, è disponibile la pagina **/ticket/cerca/**:
 - A tutela della riservatezza e conformità GDPR, è richiesta una **doppia verifica**: inserimento del **Codice Ticket** unito a un dato di riconoscimento (email, nominativo referente/azienda o recapito telefonico registrato).
 
 ---
 
-## 10. Buone Pratiche per gli Operatori
+## 11. Buone Pratiche per gli Operatori
 1. **Presa in carico immediata**: Assegnare il ticket al proprio nominativo non appena si inizia la diagnosi per informare i colleghi.
-2. **Note chiare e professionali**: Quando si utilizza *Salva & Invia al Cliente*, formulare risposte comprensibili spiegando i passaggi eseguiti.
-3. **Allegati di supporto**: Inviare schermate o file di istruzioni direttamente tramite il campo allegato della risposta.
-4. **Monitoraggio del Rating**: Verificare i punteggi di gradimento (1-5 stelle) per mantenere standard qualitativi elevati.
-
+2. **Promemoria GDPR**: Leggere sempre la formula di consenso privacy ad alta voce prima di qualsiasi registrazione vocale o teleassistenza.
+3. **Note chiare e professionali**: Quando si utilizza *Salva & Invia al Cliente*, formulare risposte comprensibili spiegando i passaggi eseguiti.
+4. **Allegati di supporto**: Inviare schermate o file di istruzioni direttamente tramite il campo allegato della risposta.
+5. **Monitoraggio del Rating**: Verificare i punteggi di gradimento (1-5 stelle) per mantenere standard qualitativi elevati.

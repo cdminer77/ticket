@@ -11,8 +11,36 @@ from .models import TicketRecording
 logger = logging.getLogger(__name__)
 
 # Directory per modelli whisper locali o temporanei
-WHISPER_MODEL_SIZE = getattr(settings, 'WHISPER_MODEL_SIZE', 'small')
+WHISPER_MODEL_SIZE = getattr(settings, 'WHISPER_MODEL_SIZE', 'base')
 FFMPEG_BINARY = getattr(settings, 'FFMPEG_BINARY', shutil.which('ffmpeg') or 'ffmpeg')
+
+_MODEL_CACHE = {}
+
+def get_whisper_model():
+    """Ritorna l'istanza in cache del modello Whisper per evitare di ricaricarlo da disco a ogni traccia."""
+    try:
+        from faster_whisper import WhisperModel
+    except ImportError:
+        raise RuntimeError(
+            "La libreria 'faster-whisper' non è installata nell'ambiente Python. "
+            "Installa con: pip install faster-whisper"
+        )
+
+    device = "cpu"
+    compute_type = "int8"
+    try:
+        import torch
+        if torch.cuda.is_available():
+            device = "cuda"
+            compute_type = "float16"
+    except Exception:
+        pass
+
+    key = (WHISPER_MODEL_SIZE, device, compute_type)
+    if key not in _MODEL_CACHE:
+        logger.info(f"Caricamento modello faster-whisper ({WHISPER_MODEL_SIZE}) su device={device}, compute_type={compute_type}...")
+        _MODEL_CACHE[key] = (WhisperModel(WHISPER_MODEL_SIZE, device=device, compute_type=compute_type), device)
+    return _MODEL_CACHE[key]
 
 
 def check_ffmpeg_available():
@@ -59,32 +87,13 @@ def run_local_whisper_transcription(audio_file_path: Path):
     Esegue la trascrizione vocale sul server usando faster-whisper.
     Genera sia la trascrizione con timestamp sia il testo consolidato.
     """
-    try:
-        from faster_whisper import WhisperModel
-    except ImportError:
-        raise RuntimeError(
-            "La libreria 'faster-whisper' non è installata nell'ambiente Python. "
-            "Installa con: pip install faster-whisper"
-        )
-
-    # Inizializza il modello locale (su CPU con quantizzazione int8 o float16 se GPU disponibile)
-    device = "cpu"
-    compute_type = "int8"
-    try:
-        import torch
-        if torch.cuda.is_available():
-            device = "cuda"
-            compute_type = "float16"
-    except Exception:
-        pass
-
-    logger.info(f"Caricamento modello faster-whisper ({WHISPER_MODEL_SIZE}) su device={device}, compute_type={compute_type}...")
-    model = WhisperModel(WHISPER_MODEL_SIZE, device=device, compute_type=compute_type)
+    model, device = get_whisper_model()
+    beam_size = 5 if device == "cuda" else 1
 
     segments, info = model.transcribe(
         str(audio_file_path),
         language="it",
-        beam_size=5,
+        beam_size=beam_size,
         vad_filter=True  # Rimuove il silenzio prolungato nelle call
     )
 
